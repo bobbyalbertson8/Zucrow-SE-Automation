@@ -1,0 +1,603 @@
+/**
+ * Purchase Order Email Notification System
+ * Compatible with Google Apps Script - ES5 syntax only
+ * 
+ * Setup Instructions:
+ * 1. Add Gmail API service (Services > Gmail API)
+ * 2. Set up trigger: onEdit, From spreadsheet, On edit
+ * 3. Configure CONFIG section below
+ */
+
+// Configuration - Modify these settings as needed
+var CONFIG = {
+  SHEET_NAME: 'SE/Zucrow Purchase Request Form (Responses)',
+  
+  // Column headers (case-insensitive)
+  H_EMAIL: 'email',
+  H_NAME: 'name',
+  H_PO: 'purchase order number',
+  H_DESC_PREFIX: 'purchase order description',
+  H_QUOTE: 'quote pdf',
+  H_ORDERED: 'order placed?',
+  
+  // Helper columns (will be added automatically)
+  H_NOTIFIED: 'Notified',
+  H_MESSAGEKEY: 'MessageKey',
+  
+  // Values that mean "yes"
+  YES_VALUES: ['yes', 'y', 'true', '1', 'placed', 'ordered', 'complete', 'done'],
+  
+  // Email settings
+  EMAIL_SUBJECT: 'Your order has been placed',
+  EMAIL_GREETING: 'Hello',
+  EMAIL_SIGNATURE: '-- Purchasing Team',
+  ATTACH_QUOTE_PDF: false
+};
+
+/**
+ * Creates menu when spreadsheet opens
+ */
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu('Order Notifier')
+    .addItem('Test email for selected row', 'testEmailForRow')
+    .addItem('Check setup', 'checkSetup')
+    .addToUi();
+}
+
+/**
+ * Trigger function - runs when sheet is edited
+ */
+function onEdit(e) {
+  try {
+    // Basic validation
+    if (!e || !e.source || !e.range) {
+      return;
+    }
+    
+    var sheet = e.source.getActiveSheet();
+    if (sheet.getName() !== CONFIG.SHEET_NAME) {
+      return;
+    }
+    
+    var row = e.range.getRow();
+    if (row === 1) {
+      return; // Skip header row
+    }
+    
+    // Get column mapping
+    var mapping = getColumnMapping(sheet);
+    if (!mapping || !mapping.email || !mapping.ordered) {
+      logToSheet('ERROR: Required columns not found');
+      return;
+    }
+    
+    // Check if the edited column is the "ordered" column
+    if (e.range.getColumn() !== mapping.ordered) {
+      return;
+    }
+    
+    // Check if the new value means "yes"
+    var newValue = String(e.value || '').toLowerCase().trim();
+    if (!isYesValue(newValue)) {
+      return;
+    }
+    
+    logToSheet('Processing row ' + row + ' - order marked as placed');
+    processOrderRow(sheet, row, mapping);
+    
+  } catch (error) {
+    logToSheet('onEdit ERROR: ' + error.toString());
+  }
+}
+
+/**
+ * Main function to process a row and send email
+ */
+function processOrderRow(sheet, row, mapping) {
+  var lock = LockService.getDocumentLock();
+  
+  try {
+    // Try to get lock
+    if (!lock.tryLock(10000)) {
+      throw new Error('Could not acquire lock');
+    }
+    
+    // Ensure helper columns exist
+    ensureHelperColumns(sheet, mapping);
+    mapping = getColumnMapping(sheet); // Refresh mapping
+    
+    // Get row data
+    var rowData = getRowData(sheet, row, mapping);
+    
+    // Validate email
+    if (!rowData.email || !isValidEmail(rowData.email)) {
+      throw new Error('Invalid email: ' + rowData.email);
+    }
+    
+    // Check if already notified
+    if (rowData.notified) {
+      throw new Error('Already notified on: ' + rowData.notified);
+    }
+    
+    // Build email content
+    var emailData = buildEmailContent(rowData);
+    
+    // Get attachments
+    var attachments = [];
+    if (CONFIG.ATTACH_QUOTE_PDF && rowData.quote) {
+      var attachment = getQuoteAttachment(rowData.quote);
+      if (attachment) {
+        attachments.push(attachment);
+      }
+    }
+    
+    // Get reply-to configuration
+    var replyTo = getReplyToEmail();
+    
+    // Send the email
+    sendOrderEmail(rowData.email, emailData, attachments, replyTo);
+    
+    // Mark as sent
+    var now = new Date();
+    sheet.getRange(row, mapping.notified).setValue(now);
+    
+    var messageKey = generateMessageKey(rowData.email, rowData.po, rowData.description);
+    sheet.getRange(row, mapping.messageKey).setValue(messageKey);
+    
+    logToSheet('SUCCESS: Email sent to ' + rowData.email + ' for row ' + row);
+    
+  } catch (error) {
+    logToSheet('ERROR row ' + row + ': ' + error.toString());
+  } finally {
+    if (lock) {
+      lock.releaseLock();
+    }
+  }
+}
+
+/**
+ * Get column mapping from sheet headers
+ */
+function getColumnMapping(sheet) {
+  try {
+    var lastCol = sheet.getLastColumn();
+    if (lastCol < 1) return null;
+    
+    var headerRange = sheet.getRange(1, 1, 1, lastCol);
+    var headers = headerRange.getValues()[0];
+    
+    var mapping = {};
+    
+    for (var i = 0; i < headers.length; i++) {
+      var header = String(headers[i] || '').toLowerCase().trim();
+      var colNum = i + 1;
+      
+      if (header === CONFIG.H_EMAIL.toLowerCase()) {
+        mapping.email = colNum;
+      } else if (header === CONFIG.H_NAME.toLowerCase()) {
+        mapping.name = colNum;
+      } else if (header === CONFIG.H_PO.toLowerCase()) {
+        mapping.po = colNum;
+      } else if (header.indexOf(CONFIG.H_DESC_PREFIX.toLowerCase()) === 0) {
+        mapping.description = colNum;
+      } else if (header === CONFIG.H_QUOTE.toLowerCase()) {
+        mapping.quote = colNum;
+      } else if (header === CONFIG.H_ORDERED.toLowerCase()) {
+        mapping.ordered = colNum;
+      } else if (header === CONFIG.H_NOTIFIED.toLowerCase()) {
+        mapping.notified = colNum;
+      } else if (header === CONFIG.H_MESSAGEKEY.toLowerCase()) {
+        mapping.messageKey = colNum;
+      }
+    }
+    
+    return mapping;
+    
+  } catch (error) {
+    logToSheet('getColumnMapping ERROR: ' + error.toString());
+    return null;
+  }
+}
+
+/**
+ * Ensure helper columns exist
+ */
+function ensureHelperColumns(sheet, mapping) {
+  var needsUpdate = false;
+  var lastCol = sheet.getLastColumn();
+  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  
+  if (!mapping.notified) {
+    headers.push(CONFIG.H_NOTIFIED);
+    needsUpdate = true;
+  }
+  
+  if (!mapping.messageKey) {
+    headers.push(CONFIG.H_MESSAGEKEY);
+    needsUpdate = true;
+  }
+  
+  if (needsUpdate) {
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  }
+}
+
+/**
+ * Get data from a specific row
+ */
+function getRowData(sheet, row, mapping) {
+  var lastCol = sheet.getLastColumn();
+  var values = sheet.getRange(row, 1, 1, lastCol).getValues()[0];
+  
+  return {
+    email: mapping.email ? cleanString(values[mapping.email - 1]) : '',
+    name: mapping.name ? cleanString(values[mapping.name - 1]) : '',
+    po: mapping.po ? cleanString(values[mapping.po - 1]) : '',
+    description: mapping.description ? cleanString(values[mapping.description - 1]) : '',
+    quote: mapping.quote ? cleanString(values[mapping.quote - 1]) : '',
+    notified: mapping.notified ? cleanString(values[mapping.notified - 1]) : '',
+    messageKey: mapping.messageKey ? cleanString(values[mapping.messageKey - 1]) : ''
+  };
+}
+
+/**
+ * Build email content
+ */
+function buildEmailContent(data) {
+  var greeting = data.name ? 'Hello ' + data.name + ',' : CONFIG.EMAIL_GREETING + ',';
+  
+  // Build HTML email
+  var htmlBody = '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">';
+  htmlBody += '<p>' + greeting + '</p>';
+  htmlBody += '<p>Great news! Your order has been placed and is being processed.</p>';
+  htmlBody += '<table border="1" cellpadding="10" cellspacing="0" style="border-collapse: collapse; margin: 20px 0; width: 100%;">';
+  htmlBody += '<tr style="background-color: #f0f0f0;"><th colspan="2" style="text-align: left; padding: 12px;">Order Details</th></tr>';
+  
+  if (data.po) {
+    htmlBody += '<tr><td style="font-weight: bold; background-color: #f9f9f9;">PO Number:</td><td>' + escapeHtml(data.po) + '</td></tr>';
+  }
+  
+  if (data.description) {
+    htmlBody += '<tr><td style="font-weight: bold; background-color: #f9f9f9;">Description:</td><td>' + escapeHtml(data.description) + '</td></tr>';
+  }
+  
+  htmlBody += '<tr><td style="font-weight: bold; background-color: #f9f9f9;">Status:</td><td style="color: green; font-weight: bold;">Order Placed</td></tr>';
+  htmlBody += '<tr><td style="font-weight: bold; background-color: #f9f9f9;">Notification Date:</td><td>' + new Date().toLocaleString() + '</td></tr>';
+  htmlBody += '</table>';
+  htmlBody += '<p>If you have any questions about your order, please reply to this email.</p>';
+  htmlBody += '<p style="margin-top: 30px;">' + CONFIG.EMAIL_SIGNATURE + '</p>';
+  htmlBody += '</div>';
+  
+  // Build text email
+  var textBody = greeting + '\n\n';
+  textBody += 'Great news! Your order has been placed and is being processed.\n\n';
+  textBody += 'ORDER DETAILS:\n';
+  textBody += '==============\n';
+  
+  if (data.po) {
+    textBody += 'PO Number: ' + data.po + '\n';
+  }
+  
+  if (data.description) {
+    textBody += 'Description: ' + data.description + '\n';
+  }
+  
+  textBody += 'Status: Order Placed\n';
+  textBody += 'Notification Date: ' + new Date().toLocaleString() + '\n\n';
+  textBody += 'If you have any questions about your order, please reply to this email.\n\n';
+  textBody += CONFIG.EMAIL_SIGNATURE;
+  
+  return {
+    subject: CONFIG.EMAIL_SUBJECT,
+    htmlBody: htmlBody,
+    textBody: textBody
+  };
+}
+
+/**
+ * Send email using Gmail API
+ */
+function sendOrderEmail(toEmail, emailData, attachments, replyTo) {
+  try {
+    var boundary = 'boundary' + Date.now();
+    var nl = '\r\n';
+    
+    // Build headers
+    var headers = [];
+    headers.push('To: ' + toEmail);
+    headers.push('Subject: ' + emailData.subject);
+    headers.push('MIME-Version: 1.0');
+    
+    if (replyTo && isValidEmail(replyTo)) {
+      headers.push('Reply-To: ' + replyTo);
+    }
+    
+    var body = '';
+    
+    if (attachments.length > 0) {
+      // Email with attachments
+      headers.push('Content-Type: multipart/mixed; boundary="' + boundary + '"');
+      
+      // Alternative text/html part
+      body += '--' + boundary + nl;
+      body += 'Content-Type: multipart/alternative; boundary="' + boundary + 'alt"' + nl + nl;
+      
+      body += '--' + boundary + 'alt' + nl;
+      body += 'Content-Type: text/plain; charset=UTF-8' + nl + nl;
+      body += emailData.textBody + nl + nl;
+      
+      body += '--' + boundary + 'alt' + nl;
+      body += 'Content-Type: text/html; charset=UTF-8' + nl + nl;
+      body += emailData.htmlBody + nl + nl;
+      
+      body += '--' + boundary + 'alt--' + nl;
+      
+      // Add attachments
+      for (var i = 0; i < attachments.length; i++) {
+        var attachment = attachments[i];
+        var filename = attachment.getName() || 'attachment.pdf';
+        
+        body += '--' + boundary + nl;
+        body += 'Content-Type: ' + attachment.getContentType() + nl;
+        body += 'Content-Transfer-Encoding: base64' + nl;
+        body += 'Content-Disposition: attachment; filename="' + filename + '"' + nl + nl;
+        body += Utilities.base64Encode(attachment.getBytes()) + nl + nl;
+      }
+      
+      body += '--' + boundary + '--';
+      
+    } else {
+      // Email without attachments
+      headers.push('Content-Type: multipart/alternative; boundary="' + boundary + '"');
+      
+      body += '--' + boundary + nl;
+      body += 'Content-Type: text/plain; charset=UTF-8' + nl + nl;
+      body += emailData.textBody + nl + nl;
+      
+      body += '--' + boundary + nl;
+      body += 'Content-Type: text/html; charset=UTF-8' + nl + nl;
+      body += emailData.htmlBody + nl + nl;
+      
+      body += '--' + boundary + '--';
+    }
+    
+    // Combine headers and body
+    var rawMessage = headers.join(nl) + nl + nl + body;
+    var encodedMessage = Utilities.base64EncodeWebSafe(rawMessage);
+    
+    // Send via Gmail API
+    Gmail.Users.Messages.send({
+      raw: encodedMessage
+    }, 'me');
+    
+  } catch (error) {
+    throw new Error('Failed to send email: ' + error.toString());
+  }
+}
+
+/**
+ * Get quote attachment from Drive link
+ */
+function getQuoteAttachment(quoteText) {
+  try {
+    if (!quoteText) return null;
+    
+    var fileId = extractFileId(quoteText);
+    if (!fileId) {
+      logToSheet('No valid Drive file ID found in: ' + quoteText);
+      return null;
+    }
+    
+    // Check if Drive access is available
+    try {
+      var file = DriveApp.getFileById(fileId);
+    } catch (driveError) {
+      if (driveError.toString().indexOf('permissions') !== -1) {
+        logToSheet('PERMISSION ERROR: Drive access not authorized. Please re-run the script to grant permissions.');
+        return null;
+      } else {
+        throw driveError;
+      }
+    }
+    
+    var sizeMB = file.getSize() / (1024 * 1024);
+    
+    if (sizeMB > 25) {
+      logToSheet('WARNING: File too large (' + sizeMB.toFixed(2) + 'MB): ' + file.getName());
+      return null;
+    }
+    
+    logToSheet('Attaching PDF: ' + file.getName() + ' (' + sizeMB.toFixed(2) + 'MB)');
+    return file.getAs(MimeType.PDF);
+    
+  } catch (error) {
+    logToSheet('Attachment error: ' + error.toString());
+    return null;
+  }
+}
+
+/**
+ * Extract Google Drive file ID from various formats
+ */
+function extractFileId(text) {
+  if (!text) return null;
+  
+  // Pattern 1: /d/FILE_ID/
+  var match = text.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
+  if (match) return match[1];
+  
+  // Pattern 2: id=FILE_ID
+  match = text.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
+  if (match) return match[1];
+  
+  // Pattern 3: Just the ID
+  if (/^[a-zA-Z0-9_-]{10,}$/.test(text.trim())) {
+    return text.trim();
+  }
+  
+  return null;
+}
+
+/**
+ * Get Reply-To email from Config sheet
+ */
+function getReplyToEmail() {
+  try {
+    var configSheet = SpreadsheetApp.getActive().getSheetByName('Config');
+    if (!configSheet) return '';
+    
+    var data = configSheet.getRange(1, 1, 10, 2).getValues();
+    
+    for (var i = 0; i < data.length; i++) {
+      var key = String(data[i][0] || '').toUpperCase().trim();
+      var value = String(data[i][1] || '').trim();
+      
+      if (key === 'REPLY_TO' && isValidEmail(value)) {
+        return value;
+      }
+    }
+    
+    return '';
+    
+  } catch (error) {
+    logToSheet('Config sheet error: ' + error.toString());
+    return '';
+  }
+}
+
+/**
+ * Generate unique message key
+ */
+function generateMessageKey(email, po, description) {
+  var text = email + '|' + po + '|' + description;
+  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, text);
+  return Utilities.base64Encode(digest).substring(0, 16);
+}
+
+/**
+ * Utility Functions
+ */
+function isYesValue(value) {
+  var cleanValue = String(value || '').toLowerCase().trim();
+  return CONFIG.YES_VALUES.indexOf(cleanValue) !== -1;
+}
+
+function isValidEmail(email) {
+  if (!email) return false;
+  var pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return pattern.test(String(email).trim());
+}
+
+function cleanString(value) {
+  return String(value || '').trim();
+}
+
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function logToSheet(message) {
+  try {
+    console.log(message);
+    
+    var ss = SpreadsheetApp.getActive();
+    var logSheet = ss.getSheetByName('Automation_Log');
+    
+    if (!logSheet) {
+      logSheet = ss.insertSheet('Automation_Log');
+      logSheet.getRange(1, 1, 1, 2).setValues([['Timestamp', 'Message']]);
+      logSheet.getRange(1, 1, 1, 2).setFontWeight('bold');
+    }
+    
+    logSheet.appendRow([new Date(), message]);
+    
+    // Keep only last 500 entries
+    var lastRow = logSheet.getLastRow();
+    if (lastRow > 501) {
+      logSheet.deleteRows(2, lastRow - 501);
+    }
+    
+  } catch (error) {
+    console.error('Logging failed: ' + error.toString());
+  }
+}
+
+/**
+ * Test Functions - Available via menu
+ */
+function testEmailForRow() {
+  try {
+    var sheet = SpreadsheetApp.getActiveSheet();
+    
+    if (sheet.getName() !== CONFIG.SHEET_NAME) {
+      SpreadsheetApp.getUi().alert('Error', 'Please select the "' + CONFIG.SHEET_NAME + '" sheet first.', SpreadsheetApp.getUi().ButtonSet.OK);
+      return;
+    }
+    
+    var activeRange = sheet.getActiveRange();
+    if (!activeRange) {
+      SpreadsheetApp.getUi().alert('Error', 'Please select a cell first.', SpreadsheetApp.getUi().ButtonSet.OK);
+      return;
+    }
+    
+    var row = activeRange.getRow();
+    if (row === 1) {
+      SpreadsheetApp.getUi().alert('Error', 'Please select a data row, not the header.', SpreadsheetApp.getUi().ButtonSet.OK);
+      return;
+    }
+    
+    var mapping = getColumnMapping(sheet);
+    if (!mapping || !mapping.email || !mapping.ordered) {
+      SpreadsheetApp.getUi().alert('Error', 'Required columns not found. Please check your sheet setup.', SpreadsheetApp.getUi().ButtonSet.OK);
+      return;
+    }
+    
+    logToSheet('MANUAL TEST: Processing row ' + row);
+    processOrderRow(sheet, row, mapping);
+    
+    SpreadsheetApp.getUi().alert('Test Complete', 'Check the Automation_Log sheet for results.', SpreadsheetApp.getUi().ButtonSet.OK);
+    
+  } catch (error) {
+    SpreadsheetApp.getUi().alert('Error', 'Test failed: ' + error.toString(), SpreadsheetApp.getUi().ButtonSet.OK);
+  }
+}
+
+function checkSetup() {
+  try {
+    var issues = [];
+    
+    // Check if Gmail API is available
+    if (typeof Gmail === 'undefined') {
+      issues.push('Gmail API service not added');
+    }
+    
+    // Check sheet exists
+    var sheet = SpreadsheetApp.getActive().getSheetByName(CONFIG.SHEET_NAME);
+    if (!sheet) {
+      issues.push('Sheet "' + CONFIG.SHEET_NAME + '" not found');
+    } else {
+      var mapping = getColumnMapping(sheet);
+      if (!mapping || !mapping.email) {
+        issues.push('Email column not found');
+      }
+      if (!mapping || !mapping.ordered) {
+        issues.push('Order Placed column not found');
+      }
+    }
+    
+    if (issues.length > 0) {
+      SpreadsheetApp.getUi().alert('Setup Issues', 'Problems found:\n\n• ' + issues.join('\n• '), SpreadsheetApp.getUi().ButtonSet.OK);
+    } else {
+      SpreadsheetApp.getUi().alert('Setup Check', 'Everything looks good! ✓', SpreadsheetApp.getUi().ButtonSet.OK);
+    }
+    
+  } catch (error) {
+    SpreadsheetApp.getUi().alert('Error', 'Setup check failed: ' + error.toString(), SpreadsheetApp.getUi().ButtonSet.OK);
+  }
+}
