@@ -1,245 +1,263 @@
-# Purchase Order Email Notification System
+# GitHub Dual Logo Purchase Order Email Notification System
 
-An automated Google Sheets system that sends email notifications when purchase orders are marked as placed. Perfect for tracking and notifying users about order status changes.
+An automated Google Sheets system that sends professional email notifications when purchase orders are placed, featuring dual logo support with GitHub-hosted images and intelligent logo selection.
 
-## 🚀 Features
+## Features
 
-- **Automatic Email Notifications**: Sends professional emails when orders are marked as "placed"
-- **Smart Sheet Detection**: Automatically finds your main data sheet
-- **Duplicate Prevention**: Prevents sending duplicate emails for the same order
-- **Rate Limiting**: Built-in safety limits to prevent email spam
-- **Error Handling**: Comprehensive logging and error tracking
-- **Flexible Column Mapping**: Works with various spreadsheet layouts
-- **PDF Attachments**: Optional quote PDF attachment support
-- **Admin Tools**: Testing, monitoring, and configuration tools
+- **Dual Logo Support**: Display two different logos based on configurable strategies
+- **GitHub-Hosted Images**: No Google Drive permissions needed - logos served from your public GitHub repository
+- **Intelligent Logo Selection**: Conditional logic to choose logos based on email content, recipient, or order details
+- **Professional Email Templates**: Modern, responsive HTML emails with fallback text versions
+- **Auto-Detection**: Automatically detects spreadsheet structure and column mappings
+- **Duplicate Prevention**: Prevents sending multiple emails for the same order
+- **Rate Limiting**: Built-in protection against accidental spam
+- **Comprehensive Logging**: Detailed audit trail of all email activities
+- **Error Recovery**: Graceful handling of failures with detailed error reporting
 
-## 📋 Prerequisites
+## Logo Display Strategies
 
-Before setting up this system, you'll need:
+1. **Primary**: Always display the primary logo (Spectral)
+2. **Secondary**: Always display the secondary logo (Purdue Prop)
+3. **Both**: Display both logos side by side
+4. **Conditional**: Automatically select logo based on keywords in email address or description
 
-1. **Google Account** with access to Google Sheets and Gmail
-2. **Google Sheets** spreadsheet with purchase order data
-3. **Basic permissions** to edit Google Apps Script projects
+## Quick Setup
 
-## 🛠️ Initial Setup
+### 1. GitHub Repository Setup
 
-### Step 1: Prepare Your Spreadsheet
+1. Create a public GitHub repository (must be public for image hosting)
+2. Create an `assets/` folder in your repository
+3. Upload your logo files:
+   - `spectral_logo.png` (primary logo)
+   - `purdue_prop_logo.png` (secondary logo)
 
-Your spreadsheet should have columns for:
+### 2. Google Sheets Setup
 
-**Required Columns:**
-- **Email Address** (e.g., "Email", "Email Address", "E-mail")
-- **Purchase Order Number** (e.g., "PO Number", "Purchase Order Number", "PO #")
-- **Order Description** (e.g., "Description", "Order Description", "Item Description")
-- **Order Status** (e.g., "Order Placed?", "Order Placed", "Status")
+1. Create or open your purchase order spreadsheet
+2. Ensure you have these columns (names are flexible):
+   - Email Address
+   - Name (optional)
+   - Purchase Order Number
+   - Description
+   - Order Placed? (triggers email when set to "Yes")
 
-**Optional Columns:**
-- **Requester Name** (e.g., "Name", "Full Name", "Requester Name")
-- **Quote PDF** (e.g., "Quote PDF", "Quote File") - for Google Drive file links
+### 3. Google Apps Script Configuration
 
-**Example Spreadsheet Layout:**
-| Email | Name | PO Number | Description | Quote PDF | Order Placed? |
-|-------|------|-----------|-------------|-----------|---------------|
-| user@example.com | John Doe | PO-2024-001 | Office supplies | https://drive.google.com/... | No |
+1. In Google Sheets, go to Extensions > Apps Script
+2. Replace all code with the provided script
+3. Enable Gmail API:
+   - Click Services (+ icon)
+   - Add "Gmail API"
+4. Update the configuration:
 
-### Step 2: Open Google Apps Script
+```javascript
+var GITHUB_CONFIG = {
+  username: 'your-github-username',        // Your actual GitHub username
+  repository: 'your-repo-name',            // Your repository name
+  branch: 'main',                          // Usually 'main'
+  
+  logo: {
+    filename: 'spectral_logo.png',         // Primary logo filename
+    altText: 'Spectral',
+    maxWidth: '200px',
+    maxHeight: '100px'
+  },
+  
+  logo2: {
+    filename: 'purdue_prop_logo.png',      // Secondary logo filename  
+    altText: 'Purdue_Prop',
+    maxWidth: '200px',
+    maxHeight: '100px'
+  }
+};
+```
 
-1. In your Google Sheet, go to **Extensions** → **Apps Script**
-2. Delete any existing code in the script editor
-3. Copy and paste the entire Purchase Order Notification System code
-4. Save the project (Ctrl+S or Cmd+S)
-5. Give your project a name like "Purchase Order Notifier"
+### 4. Trigger Setup
 
-### Step 3: Enable Gmail API
+1. In Apps Script, click "Triggers" (alarm clock icon)
+2. Add trigger:
+   - Function: `onEdit`
+   - Event source: "From spreadsheet"
+   - Event type: "On edit"
 
-1. In the Apps Script editor, click **Services** (+ icon) in the left sidebar
-2. Find **Gmail API** and click **Add**
-3. Leave the default settings and click **Save**
+### 5. System Initialization
 
-### Step 4: Configure the System
+1. Save the script and return to your spreadsheet
+2. Refresh the page to see the new menu
+3. Use menu: "Initialize system"
+4. Run: "Check setup & validate config"
 
-1. In the script, find the `CONFIG` section at the top
-2. Modify settings as needed:
+## Configuration Options
+
+### Logo Strategy Configuration
+
+Access via menu: GitHub Integration > Configure logo strategy
+
+- **Primary**: Always use Spectral logo
+- **Secondary**: Always use Purdue Prop logo  
+- **Both**: Show both logos side by side
+- **Conditional**: Auto-select based on keywords
+
+### Conditional Logic Keywords
+
+The system checks for these keywords to determine when to use the secondary logo:
+
+```javascript
+LOGO2_KEYWORDS: ['purdue', '@purdue.edu', 'university', 'student']
+```
+
+If an email address or order description contains any of these keywords, the Purdue Prop logo will be displayed instead of the Spectral logo.
+
+### Email Settings
 
 ```javascript
 var CONFIG = {
-  SHEET_NAME: '', // Leave empty for auto-detection
+  LOGO_STRATEGY: 'conditional',           // Logo selection strategy
   EMAIL_SUBJECT: 'Your order has been placed',
-  EMAIL_GREETING: 'Hello',
   EMAIL_SIGNATURE: '-- Purchasing Team',
-  ATTACH_QUOTE_PDF: false, // Set to true if you want to attach PDFs
-  EMAIL_SENDER: 'auto', // Uses current user's email
+  MAX_EMAILS_PER_HOUR: 50,               // Safety limits
+  MAX_EMAILS_PER_DAY: 200,
+  DUPLICATE_CHECK_DAYS: 30,              // Prevent duplicate emails
   // ... other settings
 };
 ```
 
-### Step 5: Set Up the Trigger
+## Usage
 
-1. In Apps Script, click **Triggers** (clock icon) in the left sidebar
-2. Click **+ Add Trigger**
-3. Configure as follows:
-   - **Function to run:** `onEdit`
-   - **Event source:** From spreadsheet
-   - **Event type:** On edit
-   - **Failure notification settings:** Choose your preference
-4. Click **Save**
-5. Grant necessary permissions when prompted
+### Automatic Operation
+1. Add purchase order data to your spreadsheet
+2. When ready, change "Order Placed?" column to "Yes"
+3. Email automatically sends with appropriate logo(s)
+4. Status is tracked in "Notified" column
 
-### Step 6: Initialize the System
+### Manual Testing
+1. Select a data row in your spreadsheet
+2. Use menu: "Test email for selected row"
+3. System shows which logo(s) will be used
+4. Confirm to send test email
 
-1. In Apps Script, select the function **`initializeSystem`** from the dropdown
-2. Click **Run** (▶️ button)
-3. Grant permissions when prompted:
-   - View and manage spreadsheets
-   - Send email on your behalf
-   - Connect to external services
-4. Check that initialization completed successfully
+## Menu Functions
 
-## ✅ Testing the System
+### GitHub Integration
+- **Setup GitHub integration**: Configuration wizard
+- **Test GitHub dual logos**: Verify both logos load correctly
+- **Configure logo strategy**: Change logo display behavior
+- **Debug logo selection**: Troubleshoot logo selection issues
+- **View repository info**: Display current GitHub settings
 
-### Method 1: Use the Built-in Menu
-
-1. Go back to your Google Sheet
-2. You should see a new **"Order Notifier"** menu
-3. Click **Order Notifier** → **"Check setup & validate config"**
-4. Resolve any issues shown
-
-### Method 2: Test a Single Row
-
-1. Select a row with test data in your spreadsheet
-2. Go to **Order Notifier** → **"Test email for selected row"**
-3. Confirm when prompted - this sends a real email!
-
-### Method 3: Live Test
-
-1. Change a row's "Order Placed?" status to "Yes" or "Order Placed"
-2. The system should automatically send an email
-3. Check the **"Automation_Log"** sheet for detailed logs
-
-## 📧 How It Works
-
-1. **Trigger Activation**: When you edit the "Order Placed?" column
-2. **Value Check**: System checks if the new value means "yes" (accepts: "yes", "y", "true", "1", "placed", "ordered", "complete", etc.)
-3. **Validation**: Verifies email address, PO number, and description are present
-4. **Duplicate Check**: Ensures this exact order hasn't been emailed recently
-5. **Rate Limiting**: Confirms within hourly/daily email limits
-6. **Email Generation**: Creates professional HTML and text email
-7. **Send & Track**: Sends email and records timestamp in spreadsheet
-
-## 🎛️ Admin Tools
-
-Access these through the **"Order Notifier"** menu:
-
+### System Management
 - **Check setup & validate config**: Verify system configuration
-- **Configure sender email**: Change who emails are sent from
-- **View current configuration**: See all current settings
-- **View email backup log**: See all email attempts (success/failure)
-- **View rate limit status**: Check current email sending limits
-- **Test email for selected row**: Send test email for debugging
-- **Audit data integrity**: Check for data issues in your sheet
+- **Initialize system**: Complete setup process
+- **View email backup log**: Audit trail of all emails sent
+- **View rate limit status**: Check current usage limits
 
-## 🔧 Customization
+## Troubleshooting
 
-### Email Template
+### Logos Not Displaying
 
-Modify the `buildEmailContent()` function to customize:
-- Email subject line
-- HTML formatting
-- Email signature
-- Additional information included
-
-### Column Recognition
-
-The system automatically recognizes columns with these names (case-insensitive):
-
-- **Email**: "email", "email address", "e-mail"
-- **Name**: "name", "full name", "requester name", "user name"
-- **PO Number**: "purchase order number", "po number", "po #", "order number"
-- **Description**: "purchase order description", "description", "order description"
-- **Status**: "order placed?", "order placed", "ordered", "status", "order status"
-
-To add custom column names, modify the `COLUMN_MAPPINGS` in the CONFIG section.
-
-### "Yes" Values
-
-The system recognizes these values as "order placed":
-- "yes", "y", "true", "1"
-- "placed", "ordered", "complete", "done"
-- "confirmed", "approved", "processed"
-- And many more...
-
-Add custom values to `YES_VALUES` in the CONFIG section.
-
-## 🛡️ Safety Features
-
-### Rate Limiting
-- **50 emails per hour** (configurable)
-- **200 emails per day** (configurable)
-- Prevents accidental mass email sending
-
-### Duplicate Prevention
-- **30-day duplicate check** (configurable)
-- Prevents sending the same order notification multiple times
-- Uses email + PO number + description as unique identifier
-
-### Error Handling
-- Comprehensive error logging
-- Failed attempts are recorded with reasons
-- System continues operating even if individual emails fail
-
-## 📊 Monitoring & Logs
-
-The system creates several tracking sheets:
-
-- **Automation_Log**: Detailed system activity and errors
-- **Email_Backup_Log**: Record of all email attempts
-- **Rate_Limit_Log**: Email sending frequency tracking
-
-## ❗ Troubleshooting
+1. **Repository not public**: GitHub raw URLs only work with public repositories
+2. **File paths incorrect**: Verify files are in `assets/` folder with exact filenames
+3. **Wrong GitHub config**: Check username and repository name in script
+4. **Logo strategy issue**: Use "Debug logo selection" to see selection logic
 
 ### Common Issues
 
-**"Gmail API service not available"**
-- Solution: Add Gmail API service in Apps Script → Services
-
-**"No onEdit trigger found"**
-- Solution: Create trigger in Apps Script → Triggers → Add Trigger
-
-**"Could not find main data sheet"**
-- Solution: Ensure your sheet has proper column headers or set `SHEET_NAME` in CONFIG
-
-**"Email column not found"**
-- Solution: Make sure you have a column with "email" in the name
+**"Configuration validation failed"**
+- Update GITHUB_CONFIG with your actual repository details
+- Ensure Gmail API is enabled in Apps Script
+- Verify your spreadsheet has required columns
 
 **"Required columns not found"**
-- Solution: Verify your sheet has email, PO number, description, and status columns
+- System auto-detects columns by name
+- Ensure columns exist: Email, Order Status, PO Number, Description
+- Column names are flexible (e.g., "Email Address", "E-mail" both work)
+
+**"Duplicate email prevented"**
+- System prevents sending same order multiple times
+- Override available for testing
+- Adjust DUPLICATE_CHECK_DAYS in config
+
+### Debug Tools
+
+Use the built-in debugging functions:
+
+1. **Debug logo selection**: Shows which logo will be selected for a specific row
+2. **Test GitHub dual logos**: Verifies logo URLs and selection logic
+3. **View current configuration**: Displays all current settings
+4. **Audit data integrity**: Checks for data issues
+
+## Security & Privacy
+
+- **Repository must be public**: Required for GitHub image hosting
+- **No sensitive data**: Never commit passwords, API keys, or private information to GitHub
+- **Google Apps Script**: Main script stays in your private Google Apps Script project
+- **Rate limiting**: Built-in protection prevents accidental spam
+- **Audit logging**: Complete record of all email activities
+
+## File Structure
+
+```
+your-github-repo/
+├── README.md                    # This file
+├── assets/
+│   ├── spectral_logo.png       # Primary logo
+│   ├── purdue_prop_logo.png    # Secondary logo
+│   └── (optional fallbacks)
+└── (other repository files)
+```
+
+## Technical Details
+
+### Email Format
+- **HTML emails**: Modern, responsive design with fallback images
+- **Text fallback**: Plain text version for compatibility
+- **Professional styling**: Clean, corporate appearance
+- **Mobile responsive**: Optimized for all devices
+
+### GitHub Integration
+- Uses GitHub raw content URLs: `https://raw.githubusercontent.com/username/repo/branch/assets/filename.png`
+- Fallback chain for missing images
+- Version tracking in email footers
+- Repository attribution (optional)
+
+### Google Sheets Integration
+- Auto-detects column structure
+- Flexible column naming
+- Helper columns added automatically
+- Data validation rules applied
+
+## Support
 
 ### Getting Help
+1. Check the Automation_Log sheet for detailed error messages
+2. Use built-in debug functions to troubleshoot
+3. Verify GitHub repository is public and contains logo files
+4. Ensure Gmail API is properly enabled
 
-1. Check the **Automation_Log** sheet for detailed error messages
-2. Use **"Check setup & validate config"** from the menu
-3. Verify your column headers match expected names
-4. Test with a single row first using **"Test email for selected row"**
+### Common Questions
 
-## 🔒 Security & Privacy
+**Q: Can I use private GitHub repositories?**
+A: No, GitHub raw URLs require public repositories for image hosting in emails.
 
-- Uses your Google account credentials
-- Emails are sent from your Gmail account
-- No external services required
-- All data stays within your Google account
-- Rate limiting prevents abuse
+**Q: How do I change which logo displays?**
+A: Use the "Configure logo strategy" menu option or modify LOGO2_KEYWORDS for conditional logic.
 
-## 📝 Version History
+**Q: Can I add more logos?**
+A: The current system supports two logos. Additional logos would require code modifications.
 
-- **v1.0**: Initial release with basic email notifications
-- **v2.0**: Added duplicate prevention and rate limiting
-- **v3.0**: Enhanced error handling and admin tools
-- **v4.0**: Smart sheet detection and improved reliability
+**Q: What image formats are supported?**
+A: PNG, JPG, and GIF are supported. PNG recommended for logos with transparency.
 
-## 📄 License
+## Version History
 
-This script is provided as-is for internal business use. Modify as needed for your organization.
+- **v2.0 - GitHub Dual Logo Edition**: Added dual logo support, GitHub integration, conditional selection
+- **v1.x**: Single logo Google Drive-based system (deprecated)
+
+## License
+
+This project is provided as-is for educational and business use. Modify as needed for your organization.
 
 ---
 
-**Need help?** Check the troubleshooting section above or review the detailed logs in your **Automation_Log** sheet.
+**Repository**: `https://github.com/yourusername/purchase-order-notifier`
+**Version**: 2.0 - GitHub Dual Logo Edition
