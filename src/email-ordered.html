@@ -4,15 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Purchase Order Placed</title>
-    <!--[if mso]>
-    <noscript>
-      <xml>
-        <o:OfficeDocumentSettings>
-          <o:PixelsPerInch>96</o:PixelsPerInch>
-        </o:OfficeDocumentSettings>
-      </xml>
-    </noscript>
-    <![endif]-->
   </head>
   <body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
     
@@ -21,7 +12,7 @@
       
       <!-- Header Section with Logos -->
       <? if (logos && logos.length) { ?>
-        <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%); padding:30px 40px; text-align:center;">
+        <div style="background: linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%); padding:30px 40px; text-align:center;">
           <div style="display:inline-block;">
             <? logos.forEach(function(logo, index){ ?>
               <img src="<?= logo.url ?>" 
@@ -39,9 +30,9 @@
         <!-- Title Section -->
         <div style="text-align:center; margin-bottom:40px;">
           <h1 style="margin:0 0 12px; font-size:32px; font-weight:700; color:#1f2937; letter-spacing:-0.5px;">
-            Purchase Order Placed
+            ✅ Purchase Order Confirmed
           </h1>
-          <div style="width:60px; height:4px; background:linear-gradient(90deg, #3b82f6, #8b5cf6); margin:0 auto; border-radius:2px;"></div>
+          <div style="width:60px; height:4px; background:linear-gradient(90deg, #10b981, #3b82f6); margin:0 auto; border-radius:2px;"></div>
         </div>
 
         <!-- Greeting -->
@@ -59,19 +50,19 @@
               <span style="color:white; font-size:24px; font-weight:bold;">✓</span>
             </div>
             <div>
-              <h3 style="margin:0 0 5px; font-size:20px; font-weight:600; color:#065f46;">Order Confirmed</h3>
-              <p style="margin:0; font-size:16px; color:#047857;">Your purchase request has been ordered and is being processed.</p>
+              <h3 style="margin:0 0 5px; font-size:20px; font-weight:600; color:#065f46;">Order Confirmed & Placed</h3>
+              <p style="margin:0; font-size:16px; color:#047857;"><?= enhancedData.statusMessage ?></p>
             </div>
           </div>
         </div>
 
-        <!-- Order Details Card -->
+        <!-- Enhanced Order Details Card -->
         <div style="background:#ffffff; border:1px solid #e5e7eb; border-radius:16px; overflow:hidden; margin-bottom:40px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);">
           
           <!-- Card Header -->
           <div style="background:linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding:20px 30px; border-bottom:1px solid #e2e8f0;">
             <h2 style="margin:0; font-size:20px; font-weight:600; color:#1e293b; display:flex; align-items:center;">
-              <span style="width:24px; height:24px; background:#3b82f6; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; margin-right:12px;">
+              <span style="width:24px; height:24px; background:#10b981; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; margin-right:12px;">
                 <span style="color:white; font-size:14px;">📋</span>
               </span>
               Order Details
@@ -95,13 +86,22 @@
               </tr>
               <? } ?>
               
-              <? if (data.item) { ?>
+              <!-- Enhanced Description Display -->
+              <? if (data.description || data.item) { ?>
               <tr>
                 <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; font-weight:600; color:#64748b; width:180px; vertical-align:top;">
                   Description
                 </td>
                 <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; color:#1e293b; line-height:1.6;">
-                  <?= data.item ?>
+                  <div style="background:#f8fafc; padding:15px 20px; border-radius:8px; border-left:4px solid #10b981;">
+                    <strong style="display:block; color:#065f46; margin-bottom:5px;">Item Details:</strong>
+                    <?= data.description || data.item ?>
+                  </div>
+                  <? if (enhancedData.hasLongDescription) { ?>
+                    <div style="margin-top:10px; padding:10px; background:#ecfdf5; border-radius:6px; font-size:14px; color:#047857;">
+                      📝 Detailed specifications included in your purchase request
+                    </div>
+                  <? } ?>
                 </td>
               </tr>
               <? } ?>
@@ -112,7 +112,7 @@
                   Quantity
                 </td>
                 <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; color:#1e293b;">
-                  <strong><?= data.quantity ?></strong>
+                  <strong style="font-size:18px; color:#059669;"><?= data.quantity ?></strong>
                 </td>
               </tr>
               <? } ?>
@@ -123,9 +123,14 @@
                   Total Cost
                 </td>
                 <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; color:#1e293b;">
-                  <div style="background:linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%); color:#991b1b; padding:10px 18px; border-radius:10px; font-size:18px; font-weight:700; display:inline-block; border:1px solid #fecaca;">
-                    <?= data.cost ?>
+                  <div style="background:linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%); color:#991b1b; padding:12px 20px; border-radius:10px; font-size:20px; font-weight:700; display:inline-block; border:1px solid #fecaca;">
+                    <?= enhancedData.formattedCost || data.cost ?>
                   </div>
+                  <? if (enhancedData.isUrgent) { ?>
+                    <div style="margin-top:8px; padding:6px 12px; background:#fef3c7; color:#92400e; border-radius:4px; font-size:12px; font-weight:600; display:inline-block;">
+                      🚨 High-Value Order
+                    </div>
+                  <? } ?>
                 </td>
               </tr>
               <? } ?>
@@ -133,34 +138,60 @@
               <? if (data.quotePdf) { ?>
               <tr>
                 <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; font-weight:600; color:#64748b; width:180px; vertical-align:top;">
-                  Quote PDF
+                  Quote/Documentation
                 </td>
                 <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; color:#1e293b;">
                   <a href="<?= data.quotePdf ?>" 
-                     style="background:linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:600; display:inline-flex; align-items:center;">
-                    📄 View Quote
+                     style="background:linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color:white; padding:12px 24px; border-radius:8px; text-decoration:none; font-weight:600; display:inline-flex; align-items:center;">
+                    📄 View Quote Document
                   </a>
+                </td>
+              </tr>
+              <? } ?>
+
+              <!-- Enhanced Tracking Information -->
+              <? if (enhancedData.hasTracking) { ?>
+              <tr>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; font-weight:600; color:#64748b; width:180px; vertical-align:top;">
+                  Tracking Reference
+                </td>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; color:#1e293b;">
+                  <div style="background:#e0f2fe; padding:10px 16px; border-radius:8px; font-family:monospace; font-weight:600; color:#0369a1; display:inline-block;">
+                    🔍 <?= enhancedData.trackingInfo ?>
+                  </div>
                 </td>
               </tr>
               <? } ?>
               
               <tr>
                 <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; font-weight:600; color:#64748b; width:180px; vertical-align:top;">
-                  Status
+                  Current Status
                 </td>
                 <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; color:#1e293b;">
                   <span style="background:linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%); color:#166534; padding:8px 16px; border-radius:20px; font-size:14px; font-weight:600; border:1px solid #bbf7d0;">
-                    🟢 <?= data.status ?>
+                    <?= enhancedData.statusIcon ?> <?= data.status ?> - Order Confirmed
                   </span>
                 </td>
               </tr>
               
               <tr>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; font-weight:600; color:#64748b; width:180px; vertical-align:top;">
+                  Estimated Delivery
+                </td>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; color:#1e293b;">
+                  <div style="display:flex; align-items:center;">
+                    <span style="font-weight:600; color:#059669; margin-right:10px;">📅</span>
+                    <span><?= enhancedData.estimatedDelivery ?></span>
+                  </div>
+                </td>
+              </tr>
+              
+              <tr>
                 <td style="padding:20px 30px; font-weight:600; color:#64748b; width:180px; vertical-align:top;">
-                  Order Date
+                  Order Confirmed
                 </td>
                 <td style="padding:20px 30px; color:#1e293b;">
-                  <?= data.timestamp ?>
+                  <?= enhancedData.formattedDate || data.timestamp ?>
                 </td>
               </tr>
             </table>
@@ -174,12 +205,15 @@
               <span style="color:white; font-size:20px;">🚀</span>
             </div>
             <div>
-              <h3 style="margin:0 0 12px; font-size:18px; font-weight:600; color:#92400e;">What's Next?</h3>
+              <h3 style="margin:0 0 12px; font-size:18px; font-weight:600; color:#92400e;">What Happens Next?</h3>
               <p style="margin:0 0 15px; color:#a16207; line-height:1.6;">
-                We're processing your order and will keep you updated on the progress. You can expect:
+                Your purchase request has been approved and the order has been placed with our supplier. Here's what you can expect:
               </p>
               <ul style="margin:0; padding-left:20px; color:#a16207; line-height:1.8;">
-                <li><strong>Support</strong> - Reply to this email with any questions</li>
+                <li><strong>Processing</strong> - Your order is being prepared by the vendor</li>
+                <li><strong>Shipping Updates</strong> - You'll receive an "In Transit" notification when shipped</li>
+                <li><strong>Delivery Confirmation</strong> - Final notification when your order arrives</li>
+                <li><strong>Questions?</strong> - Reply to this email for immediate assistance</li>
               </ul>
             </div>
           </div>
@@ -189,10 +223,10 @@
         <div style="text-align:center; padding:30px 0; border-top:1px solid #e5e7eb;">
           <h3 style="margin:0 0 15px; font-size:18px; font-weight:600; color:#374151;">Questions about your order?</h3>
           <p style="margin:0 0 20px; color:#6b7280; line-height:1.6;">
-            Our team is here to help. Reply to this email or contact us directly.
+            Our team is here to help throughout the entire process.
           </p>
           <div style="display:inline-flex; align-items:center; background:#f8fafc; padding:15px 25px; border-radius:12px; border:1px solid #e2e8f0;">
-            <span style="color:#3b82f6; font-size:18px; margin-right:10px;">📧</span>
+            <span style="color:#10b981; font-size:18px; margin-right:10px;">📧</span>
             <span style="color:#374151; font-weight:500;">Reply to this email for support</span>
           </div>
         </div>
@@ -204,11 +238,11 @@
           Thank you for choosing us for your procurement needs
         </p>
         <p style="margin:0 0 15px; color:#9ca3af; font-size:12px;">
-          Order Reference: Row <?= data.rowNumber ?> | <?= data.timestamp ?>
+          Order Reference: Row <?= data.rowNumber ?> | Confirmed: <?= enhancedData.formattedDate || data.timestamp ?>
         </p>
         <div style="width:100%; height:1px; background:linear-gradient(90deg, transparent, #d1d5db, transparent); margin:20px 0;"></div>
         <p style="margin:0; font-size:11px; color:#d1d5db;">
-          This email was generated automatically by Google Apps Script
+          This confirmation was generated automatically by our purchase order system
         </p>
       </div>
     </div>
