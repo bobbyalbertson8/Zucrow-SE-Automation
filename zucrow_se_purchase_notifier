@@ -1504,26 +1504,4 @@ function setupGitHubIntegration() {
   }
 }
 
-/**
- * Test GitHub-hosted dual logos
- */
-function testGitHubLogos() {
-  try {
-    logToSheet('=== TESTING GITHUB DUAL LOGOS ===');
-    logToSheet('Primary logo URL: ' + CONFIG.LOGO_URL);
-    logToSheet('Secondary logo URL: ' + CONFIG.LOGO2_URL);
-    logToSheet('Logo strategy: ' + CONFIG.LOGO_STRATEGY);
-    logToSheet('Repository: https://github.com/' + GITHUB_CONFIG.username + '/' + GITHUB_CONFIG.repository);
-    
-    // Test different logo selection scenarios
-    var testScenarios = [
-      { name: 'Regular User', email: 'user@example.com', description: 'Regular order' },
-      { name: 'Purdue User', email: 'student@purdue.edu', description: 'University equipment' },
-      { name: 'University Order', email: 'admin@company.com', description: 'Equipment for Purdue research' }
-    ];
-    
-    for (var i = 0; i < testScenarios.length; i++) {
-      var scenario = testScenarios[i];
-      var selectedLogos = selectLogos(scenario);
-      
-      logToSheet('
+
