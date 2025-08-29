@@ -1,6 +1,7 @@
 {
   "timeZone": "America/Indiana/Indianapolis",
   "exceptionLogging": "STACKDRIVER",
+<<<<<<< HEAD
   "runtimeVersion": "V8",
   "oauthScopes": [
     "https://www.googleapis.com/auth/script.send_mail",
@@ -8,3 +9,13 @@
     "https://www.googleapis.com/auth/spreadsheets.readonly"
   ]
 }
+=======
+  "oauthScopes": [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/gmail.send",
+    "https://www.googleapis.com/auth/gmail.settings.basic",
+    "https://www.googleapis.com/auth/drive.readonly",
+    "https://www.googleapis.com/auth/script.external_request"
+  ]
+}
+>>>>>>> origin/main
