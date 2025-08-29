@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Order In Transit</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+    
+    <!-- Email Container -->
+    <div style="max-width:650px; margin:0 auto; background:#ffffff;">
+      
+      <!-- Header Section with Logos -->
+      <? if (logos && logos.length) { ?>
+        <div style="background: linear-gradient(135deg, #d97706 0%, #f59e0b 50%, #fbbf24 100%); padding:30px 40px; text-align:center;">
+          <div style="display:inline-block;">
+            <? logos.forEach(function(logo, index){ ?>
+              <img src="<?= logo.url ?>" 
+                   alt="<?= logo.alt ?>" 
+                   style="max-height:80px; height:auto; max-width:<?= logo.maxW ?>; <?= index > 0 ? 'margin-left:30px;' : '' ?> vertical-align:middle; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15);" 
+                   onerror="this.style.display='none'"/>
+            <? }); ?>
+          </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="background:#f8fafc; padding:40px; text-align:center; border-top:1px solid #e5e7eb;">
+        <p style="margin:0 0 8px; color:#6b7280; font-size:14px; font-weight:500;">
+          Your order is on its way - thank you for your patience
+        </p>
+        <p style="margin:0 0 15px; color:#9ca3af; font-size:12px;">
+          Shipment Reference: Row <?= data.rowNumber ?> | In Transit: <?= enhancedData.formattedDate || data.timestamp ?>
+        </p>
+        <div style="width:100%; height:1px; background:linear-gradient(90deg, transparent, #d1d5db, transparent); margin:20px 0;"></div>
+        <p style="margin:0; font-size:11px; color:#d1d5db;">
+          This shipping update was generated automatically by our tracking system
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
+        </div>
+      <? } ?>
+
+      <!-- Main Content Area -->
+      <div style="padding:50px 40px;">
+        
+        <!-- Title Section -->
+        <div style="text-align:center; margin-bottom:40px;">
+          <h1 style="margin:0 0 12px; font-size:32px; font-weight:700; color:#1f2937; letter-spacing:-0.5px;">
+            🚚 Your Order is In Transit!
+          </h1>
+          <div style="width:60px; height:4px; background:linear-gradient(90deg, #f59e0b, #3b82f6); margin:0 auto; border-radius:2px;"></div>
+        </div>
+
+        <!-- Greeting -->
+        <div style="margin-bottom:35px;">
+          <p style="font-size:18px; color:#374151; margin:0; line-height:1.6;">
+            <? if (data.name) { ?>Hello <strong><?= data.name ?></strong>,<? } else { ?>Hello,<? } ?>
+          </p>
+        </div>
+
+        <!-- Transit Status Card -->
+        <div style="background:linear-gradient(135deg, #fefce8 0%, #fef9c3 100%); border:2px solid #f59e0b; border-radius:16px; padding:25px; margin-bottom:40px; position:relative; overflow:hidden;">
+          <div style="position:absolute; top:0; right:0; width:100px; height:100px; background:rgba(245,158,11,0.1); border-radius:50%; transform:translate(30px, -30px);"></div>
+          <div style="display:flex; align-items:center; position:relative;">
+            <div style="width:50px; height:50px; background:#f59e0b; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-right:20px; flex-shrink:0;">
+              <span style="color:white; font-size:24px; font-weight:bold;">🚚</span>
+            </div>
+            <div>
+              <h3 style="margin:0 0 5px; font-size:20px; font-weight:600; color:#92400e;">Package En Route</h3>
+              <p style="margin:0; font-size:16px; color:#a16207;"><?= enhancedData.statusMessage ?></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Delivery Timeline -->
+        <div style="background:#ffffff; border:1px solid #e5e7eb; border-radius:16px; overflow:hidden; margin-bottom:30px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);">
+          <div style="background:linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding:20px 30px; border-bottom:1px solid #e2e8f0;">
+            <h2 style="margin:0; font-size:20px; font-weight:600; color:#92400e; display:flex; align-items:center;">
+              <span style="width:24px; height:24px; background:#f59e0b; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; margin-right:12px;">
+                <span style="color:white; font-size:14px;">📍</span>
+              </span>
+              Delivery Status
+            </h2>
+          </div>
+          
+          <div style="padding:30px;">
+            <!-- Progress Timeline -->
+            <div style="position:relative; padding-left:40px;">
+              <!-- Timeline Line -->
+              <div style="position:absolute; left:15px; top:0; bottom:0; width:2px; background:#e5e7eb;"></div>
+              
+              <!-- Step 1: Ordered (Complete) -->
+              <div style="position:relative; margin-bottom:25px;">
+                <div style="position:absolute; left:-27px; width:14px; height:14px; background:#10b981; border-radius:50%; border:3px solid #ffffff; box-shadow:0 0 0 2px #10b981;"></div>
+                <div style="padding-left:5px;">
+                  <h4 style="margin:0 0 3px; color:#065f46; font-weight:600;">✅ Order Confirmed</h4>
+                  <p style="margin:0; color:#6b7280; font-size:14px;">Purchase request approved and order placed</p>
+                </div>
+              </div>
+              
+              <!-- Step 2: In Transit (Current) -->
+              <div style="position:relative; margin-bottom:25px;">
+                <div style="position:absolute; left:-27px; width:14px; height:14px; background:#f59e0b; border-radius:50%; border:3px solid #ffffff; box-shadow:0 0 0 2px #f59e0b;"></div>
+                <div style="padding-left:5px;">
+                  <h4 style="margin:0 0 3px; color:#92400e; font-weight:600;">🚚 In Transit</h4>
+                  <p style="margin:0; color:#a16207; font-size:14px; font-weight:500;">Your package is on its way!</p>
+                  <p style="margin:5px 0 0; color:#6b7280; font-size:12px;">Estimated delivery: <?= enhancedData.estimatedDelivery ?></p>
+                </div>
+              </div>
+              
+              <!-- Step 3: Delivered (Pending) -->
+              <div style="position:relative;">
+                <div style="position:absolute; left:-27px; width:14px; height:14px; background:#e5e7eb; border-radius:50%; border:3px solid #ffffff;"></div>
+                <div style="padding-left:5px;">
+                  <h4 style="margin:0 0 3px; color:#9ca3af; font-weight:600;">📦 Delivered</h4>
+                  <p style="margin:0; color:#9ca3af; font-size:14px;">Final delivery confirmation pending</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Order Details Card -->
+        <div style="background:#ffffff; border:1px solid #e5e7eb; border-radius:16px; overflow:hidden; margin-bottom:40px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);">
+          
+          <!-- Card Header -->
+          <div style="background:linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding:20px 30px; border-bottom:1px solid #e2e8f0;">
+            <h2 style="margin:0; font-size:20px; font-weight:600; color:#1e293b; display:flex; align-items:center;">
+              <span style="width:24px; height:24px; background:#f59e0b; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; margin-right:12px;">
+                <span style="color:white; font-size:14px;">📋</span>
+              </span>
+              Shipment Details
+            </h2>
+          </div>
+
+          <!-- Details Table -->
+          <div style="padding:0;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%; border-collapse:collapse;">
+              
+              <? if (data.poNumber) { ?>
+              <tr>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; font-weight:600; color:#64748b; width:180px; vertical-align:top;">
+                  PO Number
+                </td>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; color:#1e293b;">
+                  <div style="background:#f1f5f9; padding:8px 16px; border-radius:8px; font-family:monospace; font-size:16px; font-weight:600; display:inline-block;">
+                    <?= data.poNumber ?>
+                  </div>
+                </td>
+              </tr>
+              <? } ?>
+              
+              <!-- Enhanced Description Display -->
+              <? if (data.description || data.item) { ?>
+              <tr>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; font-weight:600; color:#64748b; width:180px; vertical-align:top;">
+                  Item Description
+                </td>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; color:#1e293b; line-height:1.6;">
+                  <div style="background:#fefce8; padding:15px 20px; border-radius:8px; border-left:4px solid #f59e0b;">
+                    <strong style="display:block; color:#92400e; margin-bottom:5px;">📦 Shipping:</strong>
+                    <?= data.description || data.item ?>
+                  </div>
+                </td>
+              </tr>
+              <? } ?>
+              
+              <? if (data.quantity) { ?>
+              <tr>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; font-weight:600; color:#64748b; width:180px; vertical-align:top;">
+                  Quantity
+                </td>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; color:#1e293b;">
+                  <strong style="font-size:18px; color:#d97706;"><?= data.quantity ?> units</strong>
+                </td>
+              </tr>
+              <? } ?>
+
+              <!-- Enhanced Tracking Information -->
+              <? if (enhancedData.hasTracking) { ?>
+              <tr>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; font-weight:600; color:#64748b; width:180px; vertical-align:top;">
+                  Tracking Reference
+                </td>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; color:#1e293b;">
+                  <div style="background:#fef3c7; padding:12px 18px; border-radius:8px; font-family:monospace; font-weight:600; color:#92400e; display:inline-block; border:1px solid #fcd34d;">
+                    🔍 <?= enhancedData.trackingInfo ?>
+                  </div>
+                  <p style="margin:8px 0 0; color:#6b7280; font-size:12px;">Use this reference for tracking inquiries</p>
+                </td>
+              </tr>
+              <? } ?>
+              
+              <tr>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; font-weight:600; color:#64748b; width:180px; vertical-align:top;">
+                  Current Status
+                </td>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; color:#1e293b;">
+                  <span style="background:linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color:#92400e; padding:8px 16px; border-radius:20px; font-size:14px; font-weight:600; border:1px solid #fcd34d;">
+                    <?= enhancedData.statusIcon ?> <?= data.status ?> - Package Shipped
+                  </span>
+                </td>
+              </tr>
+              
+              <tr>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; font-weight:600; color:#64748b; width:180px; vertical-align:top;">
+                  Expected Delivery
+                </td>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; color:#1e293b;">
+                  <div style="display:flex; align-items:center; background:#ecfdf5; padding:12px 16px; border-radius:8px; border:1px solid #bbf7d0;">
+                    <span style="font-weight:600; color:#059669; margin-right:10px; font-size:18px;">📅</span>
+                    <div>
+                      <div style="font-weight:600; color:#065f46;"><?= enhancedData.estimatedDelivery ?></div>
+                      <div style="font-size:12px; color:#047857;">Delivery estimates may vary by location</div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              
+              <tr>
+                <td style="padding:20px 30px; font-weight:600; color:#64748b; width:180px; vertical-align:top;">
+                  Status Updated
+                </td>
+                <td style="padding:20px 30px; color:#1e293b;">
+                  <?= enhancedData.formattedDate || data.timestamp ?>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tracking & Updates Section -->
+        <div style="background:linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border:1px solid #3b82f6; border-radius:16px; padding:30px; margin-bottom:40px;">
+          <div style="display:flex; align-items:flex-start;">
+            <div style="width:48px; height:48px; background:#2563eb; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-right:20px; flex-shrink:0;">
+              <span style="color:white; font-size:20px;">📱</span>
+            </div>
+            <div>
+              <h3 style="margin:0 0 12px; font-size:18px; font-weight:600; color:#1e40af;">Stay Updated</h3>
+              <p style="margin:0 0 15px; color:#1d4ed8; line-height:1.6;">
+                We'll keep you informed throughout the delivery process:
+              </p>
+              <ul style="margin:0; padding-left:20px; color:#1d4ed8; line-height:1.8;">
+                <li><strong>Automatic Updates</strong> - You'll receive notifications for any status changes</li>
+                <li><strong>Delivery Confirmation</strong> - Final email when your package arrives</li>
+                <li><strong>Support Available</strong> - Reply to this email with any questions</li>
+                <? if (enhancedData.isUrgent) { ?>
+                <li><strong>Priority Handling</strong> - High-value orders receive expedited processing</li>
+                <? } ?>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact Information -->
+        <div style="text-align:center; padding:30px 0; border-top:1px solid #e5e7eb;">
+          <h3 style="margin:0 0 15px; font-size:18px; font-weight:600; color:#374151;">Questions about your shipment?</h3>
+          <p style="margin:0 0 20px; color:#6b7280; line-height:1.6;">
+            Our team is here to help track your order and answer any delivery questions.
+          </p>
+          <div style="display:inline-flex; align-items:center; background:#f8fafc; padding:15px 25px; border-radius:12px; border:1px solid #e2e8f0;">
+            <span style="color:#f59e0b; font-size:18px; margin-right:10px;">📧</span>
+            <span style="color:#374151; font-weight:500;">Reply to this email for tracking support</span>
+          </div>
