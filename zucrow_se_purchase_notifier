@@ -1,8 +1,8 @@
 /**
- * GitHub-Ready Purchase Order Email Notification System - DUAL LOGO EDITION
+ * GitHub-Ready Purchase Order Email Notification System
  * 
  * Repository: https://github.com/yourusername/purchase-order-notifier
- * Version: 2.0 - GitHub Dual Logo Edition
+ * Version: 2.0 - GitHub 
  * 
  * QUICK SETUP:
  * 1. Fork/clone the GitHub repository
@@ -56,7 +56,7 @@ var CONFIG = {
   SHEET_NAME: '',
   
   // Logo selection strategy: 'primary', 'secondary', 'both', 'conditional'
-  LOGO_STRATEGY: 'conditional', // Options: 'primary', 'secondary', 'both', 'conditional'
+  LOGO_STRATEGY: 'both', // Options: 'primary', 'secondary', 'both', 'conditional'
   
   // Primary GitHub-hosted logo URL (auto-generated from GITHUB_CONFIG)
   LOGO_URL: generateGitHubImageUrl(GITHUB_CONFIG.logo.filename),
@@ -140,7 +140,7 @@ function getRepositoryInfo() {
     logo2Url: CONFIG.LOGO2_URL,
     version: '2.0-GitHub-DualLogo',
     features: [
-      'GitHub-hosted dual logos',
+      'GitHub-hosted',
       'Conditional logo selection', 
       'Auto sheet detection',
       'Duplicate prevention',
@@ -551,75 +551,99 @@ function getRowData(sheet, row, mapping) {
  */
 function buildEmailContent(data) {
   var greeting = data.name ? 'Hello ' + data.name + ',' : CONFIG.EMAIL_GREETING + ',';
-  
-  // Select appropriate logo(s) based on strategy and data
+  var formattedDate = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "MMMM d, yyyy, h:mm:ss a z");
+
+  // Outlook-safe inline icons
+  var check = "<!--[if !mso]><!--><span style=\"font-family:'Segoe UI Emoji','Segoe UI Symbol','Apple Color Emoji','Noto Color Emoji',Arial,sans-serif;\">&#10003;</span><!--<![endif]--><!--[if mso]><span style='font-family:Arial,sans-serif;'>[OK]</span><![endif]-->";
+  var bolt  = "<!--[if !mso]><!--><span style=\"font-family:'Segoe UI Emoji','Segoe UI Symbol','Apple Color Emoji','Noto Color Emoji',Arial,sans-serif;\">&#9889;</span><!--<![endif]--><!--[if mso]><span style='font-family:Arial,sans-serif;'>[Lightning]</span><![endif]-->";
+
+  // Select appropriate logo(s)
   var selectedLogos = selectLogos(data);
   var logoHtml = buildLogoHtml(selectedLogos);
-  
+
   var htmlBody = '<div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff;">';
-  
-  // Add GitHub-hosted logo(s)
+
+  // Header logos
   htmlBody += logoHtml;
-  
+
+  // Greeting + intro
   htmlBody += '<p style="font-size: 16px; line-height: 1.5; color: #333; margin-bottom: 20px;">' + greeting + '</p>';
   htmlBody += '<p style="font-size: 16px; line-height: 1.5; color: #333; margin-bottom: 25px;">Great news! Your order has been placed and is being processed.</p>';
-  
-  // Modern order details card
+
+  // ===== Card shell =====
   htmlBody += '<div style="background: #ffffff; border: 1px solid #e1e5e9; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin: 25px 0;">';
   htmlBody += '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px;">' +
               '<h2 style="margin: 0; font-size: 20px; font-weight: 600;">Order Details</h2></div>';
-  
+
+  // PO Number (table row)
   if (data.po) {
-    htmlBody += '<div style="padding: 16px 20px; border-bottom: 1px solid #f0f0f0; display: flex;">' +
-                '<div style="font-weight: 600; color: #555; width: 140px; flex-shrink: 0;">PO Number:</div>' +
-                '<div style="color: #333; font-family: monospace; font-size: 14px;">' + escapeHtml(data.po) + '</div></div>';
+    htmlBody += "<table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='border-collapse:collapse;'>" +
+                  "<tr>" +
+                    "<td style='padding:16px 20px; border-top:1px solid #f0f0f0; font-weight:600; color:#555; width:140px;'>PO Number:</td>" +
+                    "<td style='padding:16px 20px; border-top:1px solid #f0f0f0; color:#333; font-family:monospace; font-size:14px;'>" + escapeHtml(data.po) + "</td>" +
+                  "</tr>" +
+                "</table>";
   }
-  
+
+  // Description (table row)
   if (data.description) {
-    htmlBody += '<div style="padding: 16px 20px; border-bottom: 1px solid #f0f0f0; display: flex;">' +
-                '<div style="font-weight: 600; color: #555; width: 140px; flex-shrink: 0;">Description:</div>' +
-                '<div style="color: #333;">' + escapeHtml(data.description) + '</div></div>';
+    htmlBody += "<table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='border-collapse:collapse;'>" +
+                  "<tr>" +
+                    "<td style='padding:16px 20px; border-top:1px solid #f0f0f0; font-weight:600; color:#555; width:140px;'>Description:</td>" +
+                    "<td style='padding:16px 20px; border-top:1px solid #f0f0f0; color:#333;'>" + escapeHtml(data.description) + "</td>" +
+                  "</tr>" +
+                "</table>";
   }
-  
-  htmlBody += '<div style="padding: 16px 20px; border-bottom: 1px solid #f0f0f0; display: flex;">' +
-              '<div style="font-weight: 600; color: #555; width: 140px; flex-shrink: 0;">Status:</div>' +
-              '<div style="color: #28a745; font-weight: 600; font-size: 16px;">✅ Order Placed</div></div>';
-  
-  htmlBody += '<div style="padding: 16px 20px; display: flex;">' +
-              '<div style="font-weight: 600; color: #555; width: 140px; flex-shrink: 0;">Date:</div>' +
-              '<div style="color: #333;">' + new Date().toLocaleString() + '</div></div>';
-  
+
+  // Status row (icon + text, table-based for alignment)
+  htmlBody += "<div style='padding: 14px 20px; border-top: 1px solid #f0f0f0; border-bottom: 1px solid #f0f0f0;'>" +
+                "<table role='presentation' cellpadding='0' cellspacing='0' style='border-collapse:collapse;'><tr>" +
+                  "<td style='vertical-align:top; padding-right:8px; font-size:16px; line-height:1; color:#28a745; font-weight:700;'>" + check + "</td>" +
+                  "<td style='vertical-align:top; font-size:16px; line-height:1; color:#28a745; font-weight:700;'>Order Placed</td>" +
+                "</tr></table>" +
+              "</div>";
+
+  // Date row (formatted)
+  htmlBody += "<table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='border-collapse:collapse;'>" +
+                "<tr>" +
+                  "<td style='padding:16px 20px; border-top:1px solid #f0f0f0; font-weight:600; color:#555; width:140px;'>Date:</td>" +
+                  "<td style='padding:16px 20px; border-top:1px solid #f0f0f0; color:#333;'>" + formattedDate + "</td>" +
+                "</tr>" +
+              "</table>";
+
+  // End card
   htmlBody += '</div>';
-  
-  // Next steps section
-  htmlBody += '<div style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); border-radius: 8px; padding: 20px; margin: 25px 0;">';
-  htmlBody += '<h3 style="margin: 0 0 10px 0; color: #1976d2; font-size: 16px;">Next Steps</h3>';
-  htmlBody += '<p style="margin: 0; color: #555; line-height: 1.5;">We\'ll keep you updated on your order progress. If you have any questions about your order, please reply to this email and we\'ll get back to you promptly.</p>';
-  htmlBody += '</div>';
-  
+
+  // Next steps
+  htmlBody += '<div style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); border-radius: 8px; padding: 20px; margin: 25px 0;">' +
+              '<h3 style="margin: 0 0 10px 0; color: #1976d2; font-size: 16px;">Next Steps</h3>' +
+              '<p style="margin: 0; color: #555; line-height: 1.5;">We\'ll keep you updated on your order progress. If you have any questions about your order, please reply to this email and we\'ll get back to you promptly.</p>' +
+              '</div>';
+
   // Footer
-  htmlBody += '<div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e0e0e0;">';
-  htmlBody += '<p style="margin: 0; color: #666; font-size: 14px;">' + CONFIG.EMAIL_SIGNATURE + '</p>';
-  
-  // GitHub attribution with dual logo info
+  htmlBody += '<div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e0e0e0;">' +
+              '<p style="margin: 0; color: #666; font-size: 14px;">' + CONFIG.EMAIL_SIGNATURE + '</p>';
+
+  // GitHub attribution with Outlook-safe lightning
   if (GITHUB_CONFIG.username && GITHUB_CONFIG.repository) {
-    var logoInfo = selectedLogos.length > 1 ? ' (dual logo)' : ' (' + selectedLogos[0].altText + ')';
-    htmlBody += '<p style="margin: 10px 0 0 0; font-size: 12px; color: #999;">' +
-                '<a href="https://github.com/' + GITHUB_CONFIG.username + '/' + GITHUB_CONFIG.repository + '" ' +
-                'style="color: #999; text-decoration: none;">⚡ Powered by GitHub automation' + logoInfo + '</a></p>';
+    var logoInfo = selectedLogos.length > 1 ? ' (' + selectedLogos[0].altText + ')':
+    htmlBody += "<p style='margin: 10px 0 0 0; font-size: 12px; color: #999;'>" +
+                  "<a href='https://github.com/" + GITHUB_CONFIG.username + "/" + GITHUB_CONFIG.repository + "' style='color:#999; text-decoration:none;'>" +
+                    "Powered by GitHub automation&nbsp;" + bolt + " " + (logoInfo || "") +
+                  "</a></p>";
   }
-  
+
   htmlBody += '</div></div>';
-  
-  // Plain text version (for email clients that don't support HTML)
+
+  // ===== Plain text version =====
   var textBody = greeting + '\n\n';
   textBody += 'Great news! Your order has been placed and is being processed.\n\n';
   textBody += 'ORDER DETAILS\n';
   textBody += '=============\n';
   if (data.po) textBody += 'PO Number: ' + data.po + '\n';
   if (data.description) textBody += 'Description: ' + data.description + '\n';
-  textBody += 'Status: Order Placed ✓\n';
-  textBody += 'Date: ' + new Date().toLocaleString() + '\n\n';
+  textBody += 'Status: Order Placed [OK]\n';
+  textBody += 'Date: ' + formattedDate + '\n\n';
   textBody += 'NEXT STEPS\n';
   textBody += '==========\n';
   textBody += 'We\'ll keep you updated on your order progress. If you have any questions\n';
@@ -629,7 +653,7 @@ function buildEmailContent(data) {
     textBody += 'This notification is powered by GitHub automation:\n';
     textBody += 'https://github.com/' + GITHUB_CONFIG.username + '/' + GITHUB_CONFIG.repository;
   }
-  
+
   return {
     subject: CONFIG.EMAIL_SUBJECT,
     htmlBody: htmlBody,
@@ -718,7 +742,7 @@ function processOrderRow(sheet, row, mapping) {
       throw new Error('Validation failed: ' + validationErrors.join('; '));
     }
     
-    if (rowData.notified && rowData.notified !== '') {
+    if (rowData.notified && rowData.notified !== '' && String(rowData.notified).slice(0,6).toUpperCase() !== 'ERROR:') {
       throw new Error('Already notified on: ' + rowData.notified);
     }
     
@@ -762,7 +786,7 @@ function processOrderRow(sheet, row, mapping) {
       logToSheet('Warning: Failed to update tracking columns: ' + updateError.toString());
     }
     
-    logToSheet('SUCCESS: Email sent to ' + rowData.email + ' for row ' + row + ' (GitHub-powered dual logo)');
+    logToSheet('SUCCESS: Email sent to ' + rowData.email + ' for row ' + row + ' (GitHub-powered)');
     
   } catch (error) {
     logToSheet('ERROR row ' + row + ': ' + error.toString());
@@ -1128,7 +1152,7 @@ function cleanString(value) {
     
     var str = String(value).trim();
     
-    if (str.startsWith('#')) {
+    if (str.charAt(0) === '#') {
       logToSheet('Warning: Cell contains formula error: ' + str);
       return '';
     }
@@ -1204,7 +1228,7 @@ function isDuplicateEmail(email, po, description) {
         var rowMessageKey = cleanString(values[i][mapping.messageKey - 1]);
         var rowNotified = values[i][mapping.notified - 1];
         
-        if (rowMessageKey === messageKey && rowNotified) {
+        if (rowMessageKey === messageKey && rowNotified && String(rowNotified).slice(0,6).toUpperCase() !== 'ERROR:') {
           var notifiedDate = null;
           
           if (rowNotified instanceof Date) {
@@ -1439,14 +1463,14 @@ function extractFileId(text) {
  */
 function onOpen() {
   SpreadsheetApp.getUi()
-    .createMenu('📧 Order Notifier (GitHub Dual Logo v2.0)')
+    .createMenu('📧 Order Notifier (GitHub v2.0)')
     .addItem('🧪 Test email for selected row', 'testEmailForRow')
     .addItem('✅ Check setup & validate config', 'checkSetup')
     .addItem('📊 Setup data validation rules', 'setupDataValidation')
     .addSeparator()
     .addSubMenu(SpreadsheetApp.getUi().createMenu('🐙 GitHub Integration')
       .addItem('🔧 Setup GitHub integration', 'setupGitHubIntegration')
-      .addItem('🖼️ Test GitHub dual logos', 'testGitHubLogos')
+      .addItem('🖼️ Test GitHub', 'testGitHubLogos')
       .addItem('🎨 Configure logo strategy', 'configureLogoStrategy')
       .addItem('🔍 Debug logo selection', 'debugLogoSelection')
       .addItem('📋 View repository info', 'viewRepositoryInfo'))
@@ -1477,7 +1501,7 @@ function setupGitHubIntegration() {
     var ui = SpreadsheetApp.getUi();
     var repoInfo = getRepositoryInfo();
     
-    var message = 'GITHUB DUAL LOGO INTEGRATION SETUP\n\n';
+    var message = 'GITHUB INTEGRATION SETUP\n\n';
     message += 'Repository URL: ' + repoInfo.url + '\n';
     message += 'Primary logo URL: ' + repoInfo.logoUrl + '\n';
     message += 'Secondary logo URL: ' + repoInfo.logo2Url + '\n';
@@ -1495,11 +1519,11 @@ function setupGitHubIntegration() {
     message += 'Logo 1: ' + GITHUB_CONFIG.logo.filename + '\n';
     message += 'Logo 2: ' + GITHUB_CONFIG.logo2.filename + '\n';
     message += 'Strategy: ' + CONFIG.LOGO_STRATEGY + '\n\n';
-    message += 'Click "Test GitHub dual logos" to verify setup.';
+    message += 'Click "Test GitHub" to verify setup.';
     
-    ui.alert('GitHub Dual Logo Setup', message, ui.ButtonSet.OK);
+    ui.alert('GitHub Setup', message, ui.ButtonSet.OK);
     
-    logToSheet('GitHub dual logo setup accessed - Repository: ' + repoInfo.url);
+    logToSheet('GitHub setup accessed - Repository: ' + repoInfo.url);
     
     return true;
     
@@ -1515,7 +1539,7 @@ function setupGitHubIntegration() {
  */
 function testGitHubLogos() {
   try {
-    logToSheet('=== TESTING GITHUB DUAL LOGOS ===');
+    logToSheet('=== TESTING GITHUB ===');
     logToSheet('Primary logo URL: ' + CONFIG.LOGO_URL);
     logToSheet('Secondary logo URL: ' + CONFIG.LOGO2_URL);
     logToSheet('Logo strategy: ' + CONFIG.LOGO_STRATEGY);
@@ -1542,21 +1566,21 @@ function testGitHubLogos() {
     
     // Generate test email to verify logo integration
     var testData = {
-      name: 'GitHub Dual Logo Test User',
+      name: 'GitHub Test User',
       email: 'test@github-integration.com',
       po: 'GITHUB-DUAL-001',
-      description: 'Testing GitHub dual logo integration'
+      description: 'Testing GitHub integration'
     };
     
     var emailContent = buildEmailContent(testData);
-    logToSheet('✓ Email content with dual logo support generated successfully');
+    logToSheet('✓ Email content successfully');
     
-    logToSheet('=== GITHUB DUAL LOGO TEST COMPLETE ===');
+    logToSheet('=== GITHUB TEST COMPLETE ===');
     
     var ui = SpreadsheetApp.getUi();
-    var message = 'GITHUB DUAL LOGO TEST RESULTS\n\n';
+    var message = 'GITHUB TEST RESULTS\n\n';
     message += '✅ Email generation: SUCCESS\n';
-    message += '✅ Dual logo integration: SUCCESS\n';
+    message += '✅ logo integration: SUCCESS\n';
     message += '✅ Logo selection logic: WORKING\n';
     message += '✅ Fallback options: CONFIGURED\n\n';
     message += 'Logo Strategy: ' + CONFIG.LOGO_STRATEGY + '\n';
@@ -1572,12 +1596,12 @@ function testGitHubLogos() {
     message += '4. Try different LOGO_STRATEGY settings\n\n';
     message += 'Check Automation_Log for detailed results.';
     
-    ui.alert('GitHub Dual Logo Test Results', message, ui.ButtonSet.OK);
+    ui.alert('GitHub Test Results', message, ui.ButtonSet.OK);
     
   } catch (error) {
-    logToSheet('GitHub dual logo test failed: ' + error.toString());
+    logToSheet('GitHub test failed: ' + error.toString());
     SpreadsheetApp.getUi().alert('Test Failed', 
-      'GitHub dual logo test failed: ' + error.toString() + 
+      'GitHub test failed: ' + error.toString() + 
       '\n\nPlease check your GITHUB_CONFIG settings and ensure both logo files exist.', 
       SpreadsheetApp.getUi().ButtonSet.OK);
   }
@@ -1713,7 +1737,7 @@ function debugLogoSelection() {
 function viewRepositoryInfo() {
   try {
     var repoInfo = getRepositoryInfo();
-    var message = 'GITHUB DUAL LOGO REPOSITORY INFO\n\n';
+    var message = 'GITHUB REPOSITORY INFO\n\n';
     message += '📁 Repository: ' + repoInfo.url + '\n';
     message += '🏷️ Version: ' + repoInfo.version + '\n';
     message += '🖼️ Primary logo: ' + repoInfo.logoUrl + '\n';
@@ -1722,7 +1746,7 @@ function viewRepositoryInfo() {
     for (var i = 0; i < repoInfo.features.length; i++) {
       message += '  • ' + repoInfo.features[i] + '\n';
     }
-    message += '\n📝 DUAL LOGO CONFIGURATION:\n';
+    message += '\n📝 CONFIGURATION:\n';
     message += '  • Strategy: ' + CONFIG.LOGO_STRATEGY + '\n';
     message += '  • Primary: ' + GITHUB_CONFIG.logo.filename + ' (' + GITHUB_CONFIG.logo.altText + ')\n';
     message += '  • Secondary: ' + GITHUB_CONFIG.logo2.filename + ' (' + GITHUB_CONFIG.logo2.altText + ')\n';
@@ -1789,7 +1813,7 @@ function testEmailForRow() {
     
     var ui = SpreadsheetApp.getUi();
     var repoInfo = getRepositoryInfo();
-    var message = 'GITHUB DUAL LOGO TEST EMAIL:\n\n';
+    var message = 'GITHUB TEST EMAIL:\n\n';
     message += 'Sheet: ' + sheet.getName() + '\n';
     message += 'Row: ' + row + '\n';
     message += 'Email: ' + (rowData.email || '(empty)') + '\n';
@@ -1797,22 +1821,22 @@ function testEmailForRow() {
     message += 'Logo(s): ' + logoPreview + '\n\n';
     message += 'Repository: ' + repoInfo.url + '\n';
     message += 'Version: ' + repoInfo.version + '\n\n';
-    message += 'Send REAL email with dual logo support?';
+    message += 'Send REAL email?';
     
-    var response = ui.alert('Confirm Dual Logo Test', message, ui.ButtonSet.YES_NO);
+    var response = ui.alert('Confirm Test', message, ui.ButtonSet.YES_NO);
     
     if (response !== ui.Button.YES) {
       return;
     }
     
-    logToSheet('MANUAL DUAL LOGO TEST: Processing row ' + row);
+    logToSheet('MANUAL TEST: Processing row ' + row);
     
     try {
       processOrderRow(sheet, row, mapping);
-      logToSheet('DUAL LOGO TEST EMAIL: Sent to ' + rowData.email + ' with logos: ' + logoPreview);
+      logToSheet('TEST EMAIL: Sent to ' + rowData.email + ' with logos: ' + logoPreview);
       
       ui.alert('Test Email Sent!', 
-        'GitHub dual logo test email sent successfully! 🎉\n\n' +
+        'GitHub test email sent successfully! 🎉\n\n' +
         'Email sent to: ' + rowData.email + '\n' +
         'Logo(s) used: ' + logoPreview + '\n' +
         'Strategy: ' + CONFIG.LOGO_STRATEGY + '\n\n' +
@@ -1832,7 +1856,7 @@ function testEmailForRow() {
           processOrderRow(sheet, row, mapping);
           
           ui.alert('Test Email Sent!', 
-            'GitHub dual logo test email sent (duplicate override)! 🎉\n\n' +
+            'GitHub test email sent (duplicate override)! 🎉\n\n' +
             'Check the Automation_Log for details.',
             ui.ButtonSet.OK);
         }
@@ -1843,10 +1867,10 @@ function testEmailForRow() {
     
   } catch (error) {
     SpreadsheetApp.getUi().alert('Test Failed', 
-      'GitHub dual logo test failed: ' + error.toString() + 
+      'GitHub test failed: ' + error.toString() + 
       '\n\nCheck the Automation_Log for details.', 
       SpreadsheetApp.getUi().ButtonSet.OK);
-    logToSheet('GITHUB DUAL LOGO TEST FAILED: ' + error.toString());
+    logToSheet('GITHUB TEST FAILED: ' + error.toString());
   }
 }
 
@@ -2044,7 +2068,7 @@ function forceBothLogosTest() {
  */
 function testConfiguration() {
   try {
-    logToSheet('=== DUAL LOGO CONFIGURATION TEST ===');
+    logToSheet('=== CONFIGURATION TEST ===');
     logToSheet('LOGO_STRATEGY: "' + CONFIG.LOGO_STRATEGY + '"');
     logToSheet('LOGO2_KEYWORDS: [' + CONFIG.LOGO2_KEYWORDS.join(', ') + ']');
     logToSheet('Primary logo URL: ' + CONFIG.LOGO_URL);
@@ -2067,7 +2091,7 @@ function testConfiguration() {
       logToSheet('Test email "' + testEmail + '" -> ' + logos[0].altText + ' logo');
     }
     
-    logToSheet('=== DUAL LOGO CONFIGURATION TEST COMPLETE ===');
+    logToSheet('=== CONFIGURATION TEST COMPLETE ===');
     
     var ui = SpreadsheetApp.getUi();
     ui.alert('Configuration Test Complete', 'Check Automation_Log for detailed results.', ui.ButtonSet.OK);
@@ -2087,7 +2111,7 @@ function testConfiguration() {
  */
 function initializeSystem() {
   try {
-    logToSheet('=== GITHUB DUAL LOGO SYSTEM INITIALIZATION ===');
+    logToSheet('=== GITHUB SYSTEM INITIALIZATION ===');
     
     var configValid = validateConfiguration();
     if (!configValid) {
@@ -2111,14 +2135,14 @@ function initializeSystem() {
     // Test GitHub integration
     testGitHubLogos();
     
-    logToSheet('=== GITHUB DUAL LOGO SYSTEM INITIALIZATION COMPLETED ===');
+    logToSheet('=== GITHUB SYSTEM INITIALIZATION COMPLETED ===');
     
     var repoInfo = getRepositoryInfo();
-    var message = 'GitHub Dual Logo System Initialized!\n\n';
+    var message = 'GitHub System Initialized!\n\n';
     message += 'Configuration validated\n';
     message += 'Data validation rules applied\n';
     message += 'Helper columns configured\n';
-    message += 'Dual logo integration tested\n\n';
+    message += 'Github integration tested\n\n';
     message += 'REPOSITORY INFO:\n';
     message += 'Repository: ' + repoInfo.url + '\n';
     message += 'Version: ' + repoInfo.version + '\n';
@@ -2135,18 +2159,18 @@ function initializeSystem() {
     } catch (e) {
       message += 'Sender email: ERROR - ' + e.message + '\n';
     }
-    message += '\nThe dual logo system is ready!\n\n';
+    message += '\nThe system is ready!\n\n';
     message += 'NEXT STEPS:\n';
     message += '1. Test with "Test email for selected row"\n';
     message += '2. Try different logo strategies\n';
     message += '3. Check logs in Automation_Log sheet';
     
-    SpreadsheetApp.getUi().alert('GitHub Dual Logo System Initialized', message, SpreadsheetApp.getUi().ButtonSet.OK);
+    SpreadsheetApp.getUi().alert('GitHub System Initialized', message, SpreadsheetApp.getUi().ButtonSet.OK);
     
   } catch (error) {
-    logToSheet('GITHUB DUAL LOGO INIT ERROR: ' + error.toString());
+    logToSheet('GITHUB INIT ERROR: ' + error.toString());
     SpreadsheetApp.getUi().alert('Initialization Failed', 
-      'GitHub dual logo system initialization failed: ' + error.toString(), 
+      'GitHub system initialization failed: ' + error.toString(), 
       SpreadsheetApp.getUi().ButtonSet.OK);
   }
 }
@@ -2256,7 +2280,7 @@ function validateConfiguration() {
       }
       return false;
     } else {
-      logToSheet('Dual logo configuration validation passed');
+      logToSheet('configuration validation passed');
       return true;
     }
   } catch (error) {
@@ -2362,7 +2386,7 @@ function checkSetup() {
     
     var sheet = getMainSheet();
     if (sheet) {
-      message += '\nCURRENT DUAL LOGO CONFIG:\n';
+      message += '\nCURRENT CONFIG:\n';
       message += 'Main sheet: "' + sheet.getName() + '"\n';
       message += 'Logo strategy: ' + CONFIG.LOGO_STRATEGY + '\n';
       message += 'Primary logo: ' + GITHUB_CONFIG.logo.altText + '\n';
@@ -2372,14 +2396,14 @@ function checkSetup() {
       message += 'Repository: ' + repoInfo.url + '\n';
     }
     
-    message += '\nDUAL LOGO FEATURES:\n';
+    message += '\nFEATURES:\n';
     message += '• Conditional logo selection\n';
     message += '• GitHub-hosted images\n';
     message += '• Multiple fallback URLs\n';
     message += '• Side-by-side display option\n';
     message += '• Keyword-based switching\n';
     
-    SpreadsheetApp.getUi().alert('GitHub Dual Logo Setup Check', message, SpreadsheetApp.getUi().ButtonSet.OK);
+    SpreadsheetApp.getUi().alert('GitHub Setup Check', message, SpreadsheetApp.getUi().ButtonSet.OK);
     
   } catch (error) {
     SpreadsheetApp.getUi().alert('Error', 'Setup check failed: ' + error.toString(), SpreadsheetApp.getUi().ButtonSet.OK);
@@ -2400,7 +2424,7 @@ function configureSenderEmail() {
       currentSender = 'Error: ' + e.message;
     }
     
-    var message = 'EMAIL SENDER CONFIGURATION (GitHub Dual Logo Edition)\n\n';
+    var message = 'EMAIL SENDER CONFIGURATION (GitHub Edition)\n\n';
     message += 'Current sender: ' + currentSender + '\n\n';
     message += 'Choose how emails should be sent:\n\n';
     message += '1. AUTO - Use current user email (recommended)\n';
@@ -2482,7 +2506,7 @@ function viewCurrentConfig() {
   try {
     var sheet = getMainSheet();
     var repoInfo = getRepositoryInfo();
-    var message = 'CURRENT SYSTEM CONFIGURATION (GitHub Dual Logo Edition)\n\n';
+    var message = 'CURRENT SYSTEM CONFIGURATION (GitHub)\n\n';
     
     // Sheet information
     if (sheet) {
@@ -2549,7 +2573,7 @@ function viewCurrentConfig() {
     message += 'onEdit Trigger: Check manually in Apps Script > Triggers\n';
     
     message += '\n';
-    message += 'DUAL LOGO FEATURES:\n';
+    message += 'FEATURES:\n';
     for (var i = 0; i < repoInfo.features.length; i++) {
       message += '• ' + repoInfo.features[i] + '\n';
     }
@@ -2577,7 +2601,7 @@ function viewEmailBackupLog() {
     
     var lastRow = backupSheet.getLastRow();
     var message = 'Email backup log contains ' + Math.max(0, lastRow - 1) + ' entries.\n\n';
-    message += 'The log shows all email attempts with GitHub dual logo version tracking.\n\n';
+    message += 'The log shows all email attempts with GitHub version tracking.\n\n';
     message += 'Columns include:\n';
     message += '• Timestamp\n• Email address\n• PO Number\n• Description\n• Status\n• Error Message\n• Message Key\n• GitHub Version';
     
@@ -2672,7 +2696,7 @@ function resetRateLimits() {
       if (lastRow > 1) {
         rateLimitSheet.deleteRows(2, lastRow - 1);
       }
-      logToSheet('ADMIN ACTION: Rate limits reset by user (GitHub Dual Logo Edition)');
+      logToSheet('ADMIN ACTION: Rate limits reset by user (GitHub)');
     }
     
     ui.alert('Rate Limits Reset', 'Rate limits have been reset.\n\nPlease use this feature responsibly.', ui.ButtonSet.OK);
@@ -2701,7 +2725,7 @@ function auditDataIntegrity() {
     var issues = [];
     var fixes = 0;
     
-    logToSheet('=== GITHUB DUAL LOGO DATA INTEGRITY AUDIT STARTED ===');
+    logToSheet('=== GITHUB DATA INTEGRITY AUDIT STARTED ===');
     logToSheet('Auditing sheet: ' + sheet.getName());
     logToSheet('GitHub repository: ' + GITHUB_CONFIG.username + '/' + GITHUB_CONFIG.repository);
     logToSheet('Logo strategy: ' + CONFIG.LOGO_STRATEGY);
@@ -2760,7 +2784,7 @@ function auditDataIntegrity() {
       }
     }
     
-    logToSheet('=== GITHUB DUAL LOGO DATA INTEGRITY AUDIT COMPLETED ===');
+    logToSheet('=== GITHUB DATA INTEGRITY AUDIT COMPLETED ===');
     
     var repoInfo = getRepositoryInfo();
     var message = 'Data integrity audit completed for "' + sheet.getName() + '".\n\n';
@@ -2777,7 +2801,7 @@ function auditDataIntegrity() {
       message += 'No issues found - system is healthy!\n';
     }
     
-    message += '\nDual logo system operating normally.';
+    message += '\nsystem operating normally.';
     
     SpreadsheetApp.getUi().alert('Audit Complete', message, SpreadsheetApp.getUi().ButtonSet.OK);
     
@@ -2788,5 +2812,5 @@ function auditDataIntegrity() {
 }
 
 // =============================================================================
-// END OF GITHUB DUAL LOGO PURCHASE ORDER EMAIL NOTIFICATION SYSTEM
+// END OF GITHUB PURCHASE ORDER EMAIL NOTIFICATION SYSTEM
 // =============================================================================
