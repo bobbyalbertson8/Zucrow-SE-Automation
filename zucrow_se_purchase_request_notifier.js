@@ -1,18 +1,18 @@
 /**
- * GitHub-Ready Purchase Order Email Notification System
+ * GitHub-Ready Purchase Order Email Notification System - DUAL LOGO EDITION
  * 
  * Repository: https://github.com/yourusername/purchase-order-notifier
- * Version: 2.0 - GitHub Edition
+ * Version: 2.0 - GitHub Dual Logo Edition
  * 
  * QUICK SETUP:
  * 1. Fork/clone the GitHub repository
- * 2. Upload your logo to assets/ folder in the repo
+ * 2. Upload both logos to assets/ folder in the repo
  * 3. Update GITHUB_CONFIG below with your repository details
  * 4. Enable Gmail API in Google Apps Script (Services > Gmail API)
  * 5. Set up onEdit trigger (Triggers > Add Trigger > onEdit > From spreadsheet > On edit)
  * 
  * Features:
- * - GitHub-hosted images (no Drive permissions needed)
+ * - GitHub-hosted dual logos with conditional selection
  * - Auto-detection of sheet structure
  * - Duplicate prevention & rate limiting
  * - Professional email templates
@@ -21,7 +21,7 @@
  */
 
 // =============================================================================
-// UPDATED GITHUB CONFIGURATION - DUAL LOGO SUPPORT
+// GITHUB CONFIGURATION - UPDATE THESE VALUES FOR YOUR REPOSITORY
 // =============================================================================
 
 var GITHUB_CONFIG = {
@@ -48,7 +48,7 @@ var GITHUB_CONFIG = {
 };
 
 // =============================================================================
-// UPDATED MAIN CONFIGURATION - DUAL LOGO SUPPORT
+// MAIN CONFIGURATION - CUSTOMIZE FOR YOUR NEEDS
 // =============================================================================
 
 var CONFIG = {
@@ -56,7 +56,7 @@ var CONFIG = {
   SHEET_NAME: '',
   
   // Logo selection strategy: 'primary', 'secondary', 'both', 'conditional'
-  LOGO_STRATEGY: 'primary', // Options: 'primary', 'secondary', 'both', 'conditional'
+  LOGO_STRATEGY: 'conditional', // Options: 'primary', 'secondary', 'both', 'conditional'
   
   // Primary GitHub-hosted logo URL (auto-generated from GITHUB_CONFIG)
   LOGO_URL: generateGitHubImageUrl(GITHUB_CONFIG.logo.filename),
@@ -73,7 +73,7 @@ var CONFIG = {
   // Conditional logo logic - use logo2 if email contains these keywords
   LOGO2_KEYWORDS: ['purdue', '@purdue.edu', 'university', 'student'],
   
-  // Rest of existing CONFIG...
+  // Column mappings (flexible - system will auto-detect these)
   COLUMN_MAPPINGS: {
     email: ['email', 'email address', 'e-mail'],
     name: ['name', 'full name', 'requester name', 'user name'],
@@ -117,11 +117,11 @@ var CONFIG = {
 };
 
 // =============================================================================
-// UPDATED GITHUB INTEGRATION FUNCTIONS - DUAL LOGO SUPPORT
+// GITHUB INTEGRATION FUNCTIONS
 // =============================================================================
 
 /**
- * Generate GitHub raw image URL for any logo
+ * Generate GitHub raw image URL
  */
 function generateGitHubImageUrl(filename) {
   return 'https://raw.githubusercontent.com/' + 
@@ -131,13 +131,40 @@ function generateGitHubImageUrl(filename) {
 }
 
 /**
+ * Get repository information
+ */
+function getRepositoryInfo() {
+  return {
+    url: 'https://github.com/' + GITHUB_CONFIG.username + '/' + GITHUB_CONFIG.repository,
+    logoUrl: CONFIG.LOGO_URL,
+    logo2Url: CONFIG.LOGO2_URL,
+    version: '2.0-GitHub-DualLogo',
+    features: [
+      'GitHub-hosted dual logos',
+      'Conditional logo selection', 
+      'Auto sheet detection',
+      'Duplicate prevention',
+      'Rate limiting',
+      'Professional templates',
+      'Multiple logo fallbacks',
+      'Enhanced error handling'
+    ]
+  };
+}
+
+/**
  * Determine which logo(s) to use based on strategy and data
  */
 function selectLogos(data) {
   var logos = [];
   
+  logToSheet('selectLogos called with strategy: ' + CONFIG.LOGO_STRATEGY);
+  logToSheet('Data email: "' + (data.email || '') + '"');
+  logToSheet('Data description: "' + (data.description || '') + '"');
+  
   switch (CONFIG.LOGO_STRATEGY) {
     case 'primary':
+      logToSheet('Using primary logo strategy');
       logos.push({
         url: CONFIG.LOGO_URL,
         altText: CONFIG.LOGO_ALT_TEXT,
@@ -147,6 +174,7 @@ function selectLogos(data) {
       break;
       
     case 'secondary':
+      logToSheet('Using secondary logo strategy');
       logos.push({
         url: CONFIG.LOGO2_URL,
         altText: CONFIG.LOGO2_ALT_TEXT,
@@ -156,6 +184,7 @@ function selectLogos(data) {
       break;
       
     case 'both':
+      logToSheet('Using both logos strategy');
       logos.push({
         url: CONFIG.LOGO_URL,
         altText: CONFIG.LOGO_ALT_TEXT,
@@ -171,20 +200,37 @@ function selectLogos(data) {
       break;
       
     case 'conditional':
+      logToSheet('Using conditional logo strategy');
       // Use logo2 if email or description contains keywords, otherwise use primary
       var useSecondary = false;
       var emailText = (data.email || '').toLowerCase();
       var descText = (data.description || '').toLowerCase();
       
+      logToSheet('Checking email text: "' + emailText + '"');
+      logToSheet('Checking description text: "' + descText + '"');
+      logToSheet('Keywords to match: ' + CONFIG.LOGO2_KEYWORDS.join(', '));
+      
       for (var i = 0; i < CONFIG.LOGO2_KEYWORDS.length; i++) {
         var keyword = CONFIG.LOGO2_KEYWORDS[i].toLowerCase();
-        if (emailText.indexOf(keyword) !== -1 || descText.indexOf(keyword) !== -1) {
+        logToSheet('Checking keyword: "' + keyword + '"');
+        
+        if (emailText.indexOf(keyword) !== -1) {
+          logToSheet('MATCH FOUND: "' + keyword + '" in email');
+          useSecondary = true;
+          break;
+        }
+        
+        if (descText.indexOf(keyword) !== -1) {
+          logToSheet('MATCH FOUND: "' + keyword + '" in description');
           useSecondary = true;
           break;
         }
       }
       
+      logToSheet('Use secondary logo: ' + useSecondary);
+      
       if (useSecondary) {
+        logToSheet('Adding secondary logo');
         logos.push({
           url: CONFIG.LOGO2_URL,
           altText: CONFIG.LOGO2_ALT_TEXT,
@@ -192,6 +238,7 @@ function selectLogos(data) {
           maxHeight: CONFIG.LOGO2_MAX_HEIGHT
         });
       } else {
+        logToSheet('Adding primary logo');
         logos.push({
           url: CONFIG.LOGO_URL,
           altText: CONFIG.LOGO_ALT_TEXT,
@@ -202,6 +249,7 @@ function selectLogos(data) {
       break;
       
     default:
+      logToSheet('Unknown strategy, falling back to primary logo');
       // Fallback to primary logo
       logos.push({
         url: CONFIG.LOGO_URL,
@@ -211,6 +259,7 @@ function selectLogos(data) {
       });
   }
   
+  logToSheet('selectLogos returning ' + logos.length + ' logo(s)');
   return logos;
 }
 
@@ -260,7 +309,7 @@ function generateLogoFallbacks(primaryUrl) {
 }
 
 /**
- * Updated email content builder with dual logo support
+ * Build email content with GitHub-hosted logo
  */
 function buildEmailContent(data) {
   var greeting = data.name ? 'Hello ' + data.name + ',' : CONFIG.EMAIL_GREETING + ',';
@@ -350,85 +399,12 @@ function buildEmailContent(data) {
   };
 }
 
-/**
- * Updated GitHub logo test function for dual logos
- */
-function testGitHubLogos() {
-  try {
-    logToSheet('=== TESTING GITHUB DUAL LOGOS ===');
-    logToSheet('Primary logo URL: ' + CONFIG.LOGO_URL);
-    logToSheet('Secondary logo URL: ' + CONFIG.LOGO2_URL);
-    logToSheet('Logo strategy: ' + CONFIG.LOGO_STRATEGY);
-    logToSheet('Repository: https://github.com/' + GITHUB_CONFIG.username + '/' + GITHUB_CONFIG.repository);
-    
-    // Test different logo selection scenarios
-    var testScenarios = [
-      { name: 'Regular User', email: 'user@example.com', description: 'Regular order' },
-      { name: 'Purdue User', email: 'student@purdue.edu', description: 'University equipment' },
-      { name: 'University Order', email: 'admin@company.com', description: 'Equipment for Purdue research' }
-    ];
-    
-    for (var i = 0; i < testScenarios.length; i++) {
-      var scenario = testScenarios[i];
-      var selectedLogos = selectLogos(scenario);
-      
-      logToSheet('Scenario "' + scenario.name + '":');
-      logToSheet('  Email: ' + scenario.email);
-      logToSheet('  Selected logos: ' + selectedLogos.length);
-      for (var j = 0; j < selectedLogos.length; j++) {
-        logToSheet('    Logo ' + (j + 1) + ': ' + selectedLogos[j].altText + ' (' + selectedLogos[j].url + ')');
-      }
-    }
-    
-    // Generate test email to verify logo integration
-    var testData = {
-      name: 'GitHub Dual Logo Test User',
-      email: 'test@github-integration.com',
-      po: 'GITHUB-DUAL-001',
-      description: 'Testing GitHub dual logo integration'
-    };
-    
-    var emailContent = buildEmailContent(testData);
-    logToSheet('✓ Email content with dual logo support generated successfully');
-    
-    logToSheet('=== GITHUB DUAL LOGO TEST COMPLETE ===');
-    
-    var ui = SpreadsheetApp.getUi();
-    var message = 'GITHUB DUAL LOGO TEST RESULTS\n\n';
-    message += '✅ Email generation: SUCCESS\n';
-    message += '✅ Dual logo integration: SUCCESS\n';
-    message += '✅ Logo selection logic: WORKING\n';
-    message += '✅ Fallback options: CONFIGURED\n\n';
-    message += 'Logo Strategy: ' + CONFIG.LOGO_STRATEGY + '\n';
-    message += 'Primary logo: ' + GITHUB_CONFIG.logo.altText + '\n';
-    message += 'Secondary logo: ' + GITHUB_CONFIG.logo2.altText + '\n\n';
-    message += 'URLs being used:\n';
-    message += '• ' + CONFIG.LOGO_URL + '\n';
-    message += '• ' + CONFIG.LOGO2_URL + '\n\n';
-    message += 'If logos don\'t display in emails:\n\n';
-    message += '1. Ensure your repository is PUBLIC\n';
-    message += '2. Verify both logo files exist in assets/\n';
-    message += '3. Check filenames match exactly\n';
-    message += '4. Test with different LOGO_STRATEGY settings\n\n';
-    message += 'Check Automation_Log for detailed results.';
-    
-    ui.alert('GitHub Dual Logo Test Results', message, ui.ButtonSet.OK);
-    
-  } catch (error) {
-    logToSheet('GitHub dual logo test failed: ' + error.toString());
-    SpreadsheetApp.getUi().alert('Test Failed', 
-      'GitHub dual logo test failed: ' + error.toString() + 
-      '\n\nPlease check your GITHUB_CONFIG settings and ensure both logo files exist.', 
-      SpreadsheetApp.getUi().ButtonSet.OK);
-  }
-}
-
 // =============================================================================
-// UPDATED MENU SYSTEM FOR DUAL LOGO SUPPORT
+// MENU SYSTEM
 // =============================================================================
 
 /**
- * Updated menu creation with dual logo options
+ * Creates menu when spreadsheet opens
  */
 function onOpen() {
   SpreadsheetApp.getUi()
@@ -441,6 +417,7 @@ function onOpen() {
       .addItem('🔧 Setup GitHub integration', 'setupGitHubIntegration')
       .addItem('🖼️ Test GitHub dual logos', 'testGitHubLogos')
       .addItem('🎨 Configure logo strategy', 'configureLogoStrategy')
+      .addItem('🔍 Debug logo selection', 'debugLogoSelection')
       .addItem('📋 View repository info', 'viewRepositoryInfo'))
     .addSeparator()
     .addItem('📧 Configure sender email', 'configureSenderEmail')
@@ -455,71 +432,62 @@ function onOpen() {
     .addToUi();
 }
 
+// =============================================================================
+// CORE SYSTEM FUNCTIONS
+// =============================================================================
+
 /**
- * Configure logo selection strategy
+ * Enhanced onEdit trigger
  */
-function configureLogoStrategy() {
+function onEdit(e) {
   try {
-    var ui = SpreadsheetApp.getUi();
-    var currentStrategy = CONFIG.LOGO_STRATEGY;
-    
-    var message = 'LOGO STRATEGY CONFIGURATION\n\n';
-    message += 'Current strategy: ' + currentStrategy + '\n\n';
-    message += 'Available strategies:\n\n';
-    message += '1. PRIMARY - Always use Spectral logo\n';
-    message += '2. SECONDARY - Always use Purdue Prop logo\n';
-    message += '3. BOTH - Show both logos side by side\n';
-    message += '4. CONDITIONAL - Auto-select based on keywords\n\n';
-    message += 'Select a strategy (1-4):';
-    
-    var response = ui.prompt('Logo Strategy', message, ui.ButtonSet.OK_CANCEL);
-    
-    if (response.getSelectedButton() === ui.Button.OK) {
-      var choice = response.getResponseText().trim();
-      var newStrategy = '';
-      
-      switch (choice) {
-        case '1':
-          newStrategy = 'primary';
-          break;
-        case '2':
-          newStrategy = 'secondary';
-          break;
-        case '3':
-          newStrategy = 'both';
-          break;
-        case '4':
-          newStrategy = 'conditional';
-          break;
-        default:
-          ui.alert('Invalid Choice', 'Please enter 1, 2, 3, or 4.', ui.ButtonSet.OK);
-          return;
-      }
-      
-      CONFIG.LOGO_STRATEGY = newStrategy;
-      logToSheet('Logo strategy changed to: ' + newStrategy);
-      
-      var confirmMessage = 'Logo strategy updated to: ' + newStrategy + '\n\n';
-      if (newStrategy === 'conditional') {
-        confirmMessage += 'Keywords that trigger secondary logo:\n';
-        for (var i = 0; i < CONFIG.LOGO2_KEYWORDS.length; i++) {
-          confirmMessage += '• ' + CONFIG.LOGO2_KEYWORDS[i] + '\n';
-        }
-        confirmMessage += '\nModify LOGO2_KEYWORDS in config to change triggers.\n';
-      }
-      confirmMessage += '\nThis setting will reset when script reloads.\nFor permanent changes, modify CONFIG.LOGO_STRATEGY in code.';
-      
-      ui.alert('Strategy Updated', confirmMessage, ui.ButtonSet.OK);
+    if (!e || !e.source || !e.range) {
+      return;
     }
     
+    var sheet = e.source.getActiveSheet();
+    if (!sheet) {
+      return;
+    }
+    
+    var mainSheet = getMainSheet();
+    if (!mainSheet || sheet.getName() !== mainSheet.getName()) {
+      return;
+    }
+    
+    var row = e.range.getRow();
+    if (row === 1) {
+      return;
+    }
+    
+    var mapping = getColumnMapping(sheet);
+    if (!mapping || !mapping.email || !mapping.ordered) {
+      logToSheet('onEdit: Required columns not found');
+      return;
+    }
+    
+    var editedColumn = e.range.getColumn();
+    if (editedColumn !== mapping.ordered) {
+      return;
+    }
+    
+    var newValue = e.value;
+    if (!newValue) {
+      return;
+    }
+    
+    var stringValue = String(newValue).trim();
+    if (!stringValue || !isYesValue(stringValue)) {
+      return;
+    }
+    
+    logToSheet('onEdit: Processing row ' + row + ' - order marked as placed');
+    processOrderRow(sheet, row, mapping);
+    
   } catch (error) {
-    SpreadsheetApp.getUi().alert('Configuration Error', 'Failed to configure logo strategy: ' + error.toString(), SpreadsheetApp.getUi().ButtonSet.OK);
+    logToSheet('onEdit ERROR: ' + error.toString());
   }
 }
-
-// =============================================================================
-// CORE SYSTEM FUNCTIONS (Enhanced from original)
-// =============================================================================
 
 /**
  * Auto-detect the main data sheet
@@ -602,146 +570,6 @@ function getMainSheet() {
   } catch (error) {
     logToSheet('getMainSheet ERROR: ' + error.toString());
     return null;
-  }
-}
-
-/**
- * Enhanced onEdit trigger
- */
-function onEdit(e) {
-  try {
-    if (!e || !e.source || !e.range) {
-      return;
-    }
-    
-    var sheet = e.source.getActiveSheet();
-    if (!sheet) {
-      return;
-    }
-    
-    var mainSheet = getMainSheet();
-    if (!mainSheet || sheet.getName() !== mainSheet.getName()) {
-      return;
-    }
-    
-    var row = e.range.getRow();
-    if (row === 1) {
-      return;
-    }
-    
-    var mapping = getColumnMapping(sheet);
-    if (!mapping || !mapping.email || !mapping.ordered) {
-      logToSheet('onEdit: Required columns not found');
-      return;
-    }
-    
-    var editedColumn = e.range.getColumn();
-    if (editedColumn !== mapping.ordered) {
-      return;
-    }
-    
-    var newValue = e.value;
-    if (!newValue) {
-      return;
-    }
-    
-    var stringValue = String(newValue).trim();
-    if (!stringValue || !isYesValue(stringValue)) {
-      return;
-    }
-    
-    logToSheet('onEdit: Processing row ' + row + ' - order marked as placed');
-    processOrderRow(sheet, row, mapping);
-    
-  } catch (error) {
-    logToSheet('onEdit ERROR: ' + error.toString());
-  }
-}
-
-/**
- * Get the current user's email for sending
- */
-function getSenderEmail() {
-  try {
-    var senderEmail = '';
-    
-    switch (CONFIG.EMAIL_SENDER.toLowerCase()) {
-      case 'auto':
-        senderEmail = Session.getActiveUser().getEmail();
-        break;
-      case 'config':
-        senderEmail = getSenderFromConfig();
-        break;
-      default:
-        if (isValidEmail(CONFIG.EMAIL_SENDER)) {
-          senderEmail = CONFIG.EMAIL_SENDER;
-        } else {
-          logToSheet('WARNING: Invalid EMAIL_SENDER config, falling back to current user');
-          senderEmail = Session.getActiveUser().getEmail();
-        }
-        break;
-    }
-    
-    if (!senderEmail || !isValidEmail(senderEmail)) {
-      throw new Error('Could not determine valid sender email');
-    }
-    
-    logToSheet('Using sender email: ' + senderEmail);
-    return senderEmail;
-    
-  } catch (error) {
-    logToSheet('getSenderEmail ERROR: ' + error.toString());
-    
-    for (var i = 0; i < CONFIG.FALLBACK_SENDERS.length; i++) {
-      var fallback = CONFIG.FALLBACK_SENDERS[i];
-      if (isValidEmail(fallback)) {
-        logToSheet('Using fallback sender: ' + fallback);
-        return fallback;
-      }
-    }
-    
-    try {
-      var currentUser = Session.getActiveUser().getEmail();
-      if (currentUser && isValidEmail(currentUser)) {
-        logToSheet('Final fallback to current user: ' + currentUser);
-        return currentUser;
-      }
-    } catch (sessionError) {
-      logToSheet('Could not get current user email: ' + sessionError.toString());
-    }
-    
-    throw new Error('No valid sender email available');
-  }
-}
-
-/**
- * Get sender email from Config sheet
- */
-function getSenderFromConfig() {
-  try {
-    var configSheet = SpreadsheetApp.getActive().getSheetByName('Config');
-    if (!configSheet) {
-      logToSheet('Config sheet not found for sender email');
-      return '';
-    }
-    
-    var data = configSheet.getRange(1, 1, 20, 2).getValues();
-    
-    for (var i = 0; i < data.length; i++) {
-      var key = String(data[i][0] || '').toUpperCase().trim();
-      var value = String(data[i][1] || '').trim();
-      
-      if ((key === 'SENDER_EMAIL' || key === 'FROM_EMAIL' || key === 'EMAIL_FROM') && isValidEmail(value)) {
-        return value;
-      }
-    }
-    
-    logToSheet('No valid sender email found in Config sheet');
-    return '';
-    
-  } catch (error) {
-    logToSheet('getSenderFromConfig ERROR: ' + error.toString());
-    return '';
   }
 }
 
@@ -928,7 +756,7 @@ function processOrderRow(sheet, row, mapping) {
       logToSheet('Warning: Failed to update tracking columns: ' + updateError.toString());
     }
     
-    logToSheet('SUCCESS: Email sent to ' + rowData.email + ' for row ' + row + ' (GitHub-powered)');
+    logToSheet('SUCCESS: Email sent to ' + rowData.email + ' for row ' + row + ' (GitHub-powered dual logo)');
     
   } catch (error) {
     logToSheet('ERROR row ' + row + ': ' + error.toString());
@@ -966,6 +794,93 @@ function processOrderRow(sheet, row, mapping) {
 }
 
 /**
+ * Get the current user's email for sending
+ */
+function getSenderEmail() {
+  try {
+    var senderEmail = '';
+    
+    switch (CONFIG.EMAIL_SENDER.toLowerCase()) {
+      case 'auto':
+        senderEmail = Session.getActiveUser().getEmail();
+        break;
+      case 'config':
+        senderEmail = getSenderFromConfig();
+        break;
+      default:
+        if (isValidEmail(CONFIG.EMAIL_SENDER)) {
+          senderEmail = CONFIG.EMAIL_SENDER;
+        } else {
+          logToSheet('WARNING: Invalid EMAIL_SENDER config, falling back to current user');
+          senderEmail = Session.getActiveUser().getEmail();
+        }
+        break;
+    }
+    
+    if (!senderEmail || !isValidEmail(senderEmail)) {
+      throw new Error('Could not determine valid sender email');
+    }
+    
+    logToSheet('Using sender email: ' + senderEmail);
+    return senderEmail;
+    
+  } catch (error) {
+    logToSheet('getSenderEmail ERROR: ' + error.toString());
+    
+    for (var i = 0; i < CONFIG.FALLBACK_SENDERS.length; i++) {
+      var fallback = CONFIG.FALLBACK_SENDERS[i];
+      if (isValidEmail(fallback)) {
+        logToSheet('Using fallback sender: ' + fallback);
+        return fallback;
+      }
+    }
+    
+    try {
+      var currentUser = Session.getActiveUser().getEmail();
+      if (currentUser && isValidEmail(currentUser)) {
+        logToSheet('Final fallback to current user: ' + currentUser);
+        return currentUser;
+      }
+    } catch (sessionError) {
+      logToSheet('Could not get current user email: ' + sessionError.toString());
+    }
+    
+    throw new Error('No valid sender email available');
+  }
+}
+
+/**
+ * Get sender email from Config sheet
+ */
+function getSenderFromConfig() {
+  try {
+    var configSheet = SpreadsheetApp.getActive().getSheetByName('Config');
+    if (!configSheet) {
+      logToSheet('Config sheet not found for sender email');
+      return '';
+    }
+    
+    var data = configSheet.getRange(1, 1, 20, 2).getValues();
+    
+    for (var i = 0; i < data.length; i++) {
+      var key = String(data[i][0] || '').toUpperCase().trim();
+      var value = String(data[i][1] || '').trim();
+      
+      if ((key === 'SENDER_EMAIL' || key === 'FROM_EMAIL' || key === 'EMAIL_FROM') && isValidEmail(value)) {
+        return value;
+      }
+    }
+    
+    logToSheet('No valid sender email found in Config sheet');
+    return '';
+    
+  } catch (error) {
+    logToSheet('getSenderFromConfig ERROR: ' + error.toString());
+    return '';
+  }
+}
+
+/**
  * Send email using Gmail API
  */
 function sendOrderEmail(toEmail, emailData, attachments, replyTo) {
@@ -983,7 +898,7 @@ function sendOrderEmail(toEmail, emailData, attachments, replyTo) {
     }
     
     // Add GitHub automation header
-    headers.push('X-GitHub-Automation: purchase-order-notifier');
+    headers.push('X-GitHub-Automation: purchase-order-notifier-dual-logo');
     headers.push('X-Automation-Version: 2.0');
     
     var body = '';
@@ -1318,7 +1233,7 @@ function logEmailAttempt(email, po, description, status, errorMessage) {
       status,
       errorMessage || '',
       messageKey,
-      '2.0-GitHub'
+      '2.0-GitHub-DualLogo'
     ]);
     
     var lastRow = backupSheet.getLastRow();
@@ -1419,6 +1334,7 @@ function isValidEmail(email) {
  * Escape HTML special characters
  */
 function escapeHtml(text) {
+  if (!text) return '';
   return String(text)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -1531,7 +1447,7 @@ function logToSheet(message) {
       logSheet.setColumnWidth(3, 120);
     }
     
-    logSheet.appendRow([new Date(), message, '2.0-GitHub']);
+    logSheet.appendRow([new Date(), message, '2.0-GitHub-DualLogo']);
     
     var lastRow = logSheet.getLastRow();
     if (lastRow > 501) {
@@ -1544,846 +1460,70 @@ function logToSheet(message) {
 }
 
 // =============================================================================
-// SETUP AND CONFIGURATION FUNCTIONS
+// GITHUB-SPECIFIC FUNCTIONS
 // =============================================================================
 
 /**
- * Initialize the entire system
+ * Setup function for GitHub deployment
  */
-function initializeSystem() {
+function setupGitHubIntegration() {
   try {
-    logToSheet('=== GITHUB SYSTEM INITIALIZATION STARTED ===');
-    
-    var configValid = validateConfiguration();
-    if (!configValid) {
-      throw new Error('Configuration validation failed');
-    }
-    
-    var validationSetup = setupDataValidation();
-    if (validationSetup) {
-      logToSheet('Data validation rules applied successfully');
-    }
-    
-    var sheet = getMainSheet();
-    if (sheet) {
-      var mapping = getColumnMapping(sheet);
-      if (mapping) {
-        ensureHelperColumns(sheet, mapping);
-        logToSheet('Helper columns ensured');
-      }
-    }
-    
-    // Test GitHub integration
-    var githubTest = testGitHubLogo();
-    
-    logToSheet('=== GITHUB SYSTEM INITIALIZATION COMPLETED ===');
-    
+    var ui = SpreadsheetApp.getUi();
     var repoInfo = getRepositoryInfo();
-    var message = 'GitHub System Initialization Complete! 🎉\n\n';
-    message += '✅ Configuration validated\n';
-    message += '✅ Data validation rules applied\n';
-    message += '✅ Helper columns configured\n';
-    message += '✅ GitHub integration tested\n\n';
-    message += 'REPOSITORY INFO:\n';
-    message += '📁 ' + repoInfo.url + '\n';
-    message += '🏷️ Version ' + repoInfo.version + '\n';
-    message += '🖼️ Logo: ' + repoInfo.logoUrl + '\n\n';
-    if (sheet) {
-      message += 'SHEET CONFIG:\n';
-      message += '📊 Main sheet: "' + sheet.getName() + '"\n';
-    }
-    try {
-      var senderEmail = getSenderEmail();
-      message += '📧 Sender email: ' + senderEmail + '\n';
-    } catch (e) {
-      message += '📧 Sender email: ERROR - ' + e.message + '\n';
-    }
-    message += '\n🚀 The system is now ready to use!\n\n';
-    message += 'NEXT STEPS:\n';
-    message += '1. Test with "Test email for selected row"\n';
-    message += '2. Mark an order as placed to see it work\n';
-    message += '3. Check logs in Automation_Log sheet\n\n';
-    message += 'Need help? Check the repository documentation!';
     
-    SpreadsheetApp.getUi().alert('GitHub System Initialized', message, SpreadsheetApp.getUi().ButtonSet.OK);
+    var message = 'GITHUB DUAL LOGO INTEGRATION SETUP\n\n';
+    message += 'Repository URL: ' + repoInfo.url + '\n';
+    message += 'Primary logo URL: ' + repoInfo.logoUrl + '\n';
+    message += 'Secondary logo URL: ' + repoInfo.logo2Url + '\n';
+    message += 'Version: ' + repoInfo.version + '\n\n';
+    message += 'SETUP CHECKLIST:\n';
+    message += '☐ 1. Fork the GitHub repository\n';
+    message += '☐ 2. Upload BOTH logos to assets/ folder\n';
+    message += '☐ 3. Make repository public (for image hosting)\n';
+    message += '☐ 4. Update GITHUB_CONFIG in this script\n';
+    message += '☐ 5. Test both logo URLs\n\n';
+    message += 'CURRENT CONFIGURATION:\n';
+    message += 'Username: ' + GITHUB_CONFIG.username + '\n';
+    message += 'Repository: ' + GITHUB_CONFIG.repository + '\n';
+    message += 'Branch: ' + GITHUB_CONFIG.branch + '\n';
+    message += 'Logo 1: ' + GITHUB_CONFIG.logo.filename + '\n';
+    message += 'Logo 2: ' + GITHUB_CONFIG.logo2.filename + '\n';
+    message += 'Strategy: ' + CONFIG.LOGO_STRATEGY + '\n\n';
+    message += 'Click "Test GitHub dual logos" to verify setup.';
     
-  } catch (error) {
-    logToSheet('GITHUB INITIALIZATION ERROR: ' + error.toString());
-    SpreadsheetApp.getUi().alert('Initialization Failed', 
-      'GitHub system initialization failed: ' + error.toString() + 
-      '\n\nPlease check your GITHUB_CONFIG settings and try again.', 
-      SpreadsheetApp.getUi().ButtonSet.OK);
-  }
-}
-
-/**
- * Validate system configuration
- */
-function validateConfiguration() {
-  try {
-    var issues = [];
+    ui.alert('GitHub Dual Logo Setup', message, ui.ButtonSet.OK);
     
-    // Check Gmail API
-    if (typeof Gmail === 'undefined') {
-      issues.push('Gmail API service not available - please add it in Services');
-    }
+    logToSheet('GitHub dual logo setup accessed - Repository: ' + repoInfo.url);
     
-    // Check GitHub configuration
-    if (!GITHUB_CONFIG.username || GITHUB_CONFIG.username === 'yourusername') {
-      issues.push('GITHUB_CONFIG.username not configured');
-    }
-    
-    if (!GITHUB_CONFIG.repository) {
-      issues.push('GITHUB_CONFIG.repository not configured');
-    }
-    
-    // Check sheet
-    var sheet = getMainSheet();
-    if (!sheet) {
-      issues.push('Could not find main data sheet');
-    } else {
-      logToSheet('Using main sheet: ' + sheet.getName());
-      var mapping = getColumnMapping(sheet);
-      if (!mapping) {
-        issues.push('Could not determine column mapping');
-      } else {
-        if (!mapping.email) issues.push('Email column not found');
-        if (!mapping.ordered) issues.push('Order status column not found');
-        if (!mapping.po) issues.push('PO Number column not found');
-      }
-    }
-    
-    // Check sender email
-    try {
-      var senderEmail = getSenderEmail();
-      if (!senderEmail) {
-        issues.push('Could not determine sender email');
-      } else {
-        logToSheet('Sender email configured: ' + senderEmail);
-      }
-    } catch (senderError) {
-      issues.push('Sender email error: ' + senderError.toString());
-    }
-    
-    // Check email subject
-    if (!CONFIG.EMAIL_SUBJECT || CONFIG.EMAIL_SUBJECT.trim() === '') {
-      issues.push('EMAIL_SUBJECT is empty');
-    }
-    
-    // Check GitHub logo URL
-    if (CONFIG.LOGO_URL) {
-      logToSheet('GitHub logo URL: ' + CONFIG.LOGO_URL);
-    } else {
-      issues.push('GitHub logo URL not generated - check GITHUB_CONFIG');
-    }
-    
-    // Check triggers
-    try {
-      var triggers = ScriptApp.getProjectTriggers();
-      var hasOnEditTrigger = false;
-      
-      for (var i = 0; i < triggers.length; i++) {
-        if (triggers[i].getHandlerFunction() === 'onEdit' && 
-            triggers[i].getEventType() === ScriptApp.EventType.ON_EDIT) {
-          hasOnEditTrigger = true;
-          break;
-        }
-      }
-      
-      if (!hasOnEditTrigger) {
-        issues.push('No onEdit trigger found - please add one');
-      }
-    } catch (triggerError) {
-      logToSheet('Could not check triggers: ' + triggerError.toString());
-    }
-    
-    if (issues.length > 0) {
-      logToSheet('CONFIGURATION ISSUES FOUND:');
-      for (var j = 0; j < issues.length; j++) {
-        logToSheet('- ' + issues[j]);
-      }
-      return false;
-    } else {
-      logToSheet('Configuration validation passed');
-      return true;
-    }
-    
-  } catch (error) {
-    logToSheet('validateConfiguration ERROR: ' + error.toString());
-    return false;
-  }
-}
-
-/**
- * Setup data validation rules
- */
-function setupDataValidation() {
-  try {
-    var sheet = getMainSheet();
-    if (!sheet) {
-      throw new Error('Could not find main data sheet');
-    }
-    
-    var mapping = getColumnMapping(sheet);
-    if (!mapping) {
-      throw new Error('Could not determine column mapping');
-    }
-    
-    var lastRow = Math.max(sheet.getLastRow(), 100);
-    
-    // Email validation
-    if (mapping.email) {
-      var emailRule = SpreadsheetApp.newDataValidation()
-        .requireTextIsEmail()
-        .setAllowInvalid(false)
-        .setHelpText('Please enter a valid email address')
-        .build();
-      sheet.getRange(2, mapping.email, lastRow-1, 1).setDataValidation(emailRule);
-      logToSheet('Applied email validation to column ' + mapping.email);
-    }
-    
-    // Order status validation
-    if (mapping.ordered) {
-      var statusRule = SpreadsheetApp.newDataValidation()
-        .requireValueInList(['', 'Yes', 'No', 'Order Placed', 'Pending', 'Confirmed', 'Complete'])
-        .setAllowInvalid(true)
-        .setHelpText('Select order status')
-        .build();
-      sheet.getRange(2, mapping.ordered, lastRow-1, 1).setDataValidation(statusRule);
-      logToSheet('Applied status validation to column ' + mapping.ordered);
-    }
-    
-    logToSheet('Data validation setup completed for sheet: ' + sheet.getName());
     return true;
     
   } catch (error) {
-    logToSheet('setupDataValidation ERROR: ' + error.toString());
+    logToSheet('GitHub setup error: ' + error.toString());
+    SpreadsheetApp.getUi().alert('Setup Error', 'GitHub setup failed: ' + error.toString(), SpreadsheetApp.getUi().ButtonSet.OK);
     return false;
   }
 }
 
 /**
- * Check overall system setup
+ * Test GitHub-hosted dual logos
  */
-function checkSetup() {
+function testGitHubLogos() {
   try {
-    var issues = [];
-    var warnings = [];
+    logToSheet('=== TESTING GITHUB DUAL LOGOS ===');
+    logToSheet('Primary logo URL: ' + CONFIG.LOGO_URL);
+    logToSheet('Secondary logo URL: ' + CONFIG.LOGO2_URL);
+    logToSheet('Logo strategy: ' + CONFIG.LOGO_STRATEGY);
+    logToSheet('Repository: https://github.com/' + GITHUB_CONFIG.username + '/' + GITHUB_CONFIG.repository);
     
-    var configValid = validateConfiguration();
-    if (!configValid) {
-      issues.push('Configuration validation failed - check logs');
-    }
+    // Test different logo selection scenarios
+    var testScenarios = [
+      { name: 'Regular User', email: 'user@example.com', description: 'Regular order' },
+      { name: 'Purdue User', email: 'student@purdue.edu', description: 'University equipment' },
+      { name: 'University Order', email: 'admin@company.com', description: 'Equipment for Purdue research' }
+    ];
     
-    // Gmail API check
-    if (typeof Gmail === 'undefined') {
-      issues.push('Gmail API service not added');
-    }
-    
-    // GitHub configuration check
-    if (GITHUB_CONFIG.username === 'yourusername') {
-      issues.push('GITHUB_CONFIG.username needs to be updated');
-    }
-    
-    if (!GITHUB_CONFIG.repository) {
-      issues.push('GITHUB_CONFIG.repository not set');
-    }
-    
-    // Sheet check
-    var sheet = getMainSheet();
-    if (!sheet) {
-      issues.push('Could not find main data sheet');
-    } else {
-      var mapping = getColumnMapping(sheet);
-      if (!mapping || !mapping.email) {
-        issues.push('Email column not found');
-      }
-      if (!mapping || !mapping.ordered) {
-        issues.push('Order Placed column not found');
-      }
+    for (var i = 0; i < testScenarios.length; i++) {
+      var scenario = testScenarios[i];
+      var selectedLogos = selectLogos(scenario);
       
-      if (!mapping || !mapping.notified) {
-        warnings.push('Notified column will be created automatically');
-      }
-      if (!mapping || !mapping.messageKey) {
-        warnings.push('MessageKey column will be created automatically');
-      }
-    }
-    
-    // Sender email check
-    try {
-      var senderEmail = getSenderEmail();
-      logToSheet('Current sender email: ' + senderEmail);
-    } catch (senderError) {
-      issues.push('Sender email configuration issue: ' + senderError.message);
-    }
-    
-    // GitHub logo check
-    if (!CONFIG.LOGO_URL.includes(GITHUB_CONFIG.username)) {
-      warnings.push('Logo URL may not be properly configured for your GitHub username');
-    }
-    
-    var message = '';
-    
-    if (issues.length > 0) {
-      message += 'ISSUES FOUND:\n\n';
-      for (var i = 0; i < issues.length; i++) {
-        message += '❌ ' + issues[i] + '\n';
-      }
-      message += '\nPlease fix these issues before using the system.\n';
-    } else {
-      message += '✅ Setup validation passed!\n\n';
-    }
-    
-    if (warnings.length > 0) {
-      message += '\nINFO:\n';
-      for (var j = 0; j < warnings.length; j++) {
-        message += '⚠️ ' + warnings[j] + '\n';
-      }
-    }
-    
-    if (sheet) {
-      message += '\nCURRENT CONFIGURATION:\n';
-      message += '📊 Main sheet: "' + sheet.getName() + '"\n';
-      try {
-        var currentSender = getSenderEmail();
-        message += '📧 Sender email: ' + currentSender + '\n';
-      } catch (e) {
-        message += '📧 Sender email: ERROR - ' + e.message + '\n';
-      }
-      
-      var repoInfo = getRepositoryInfo();
-      message += '🐙 Repository: ' + repoInfo.url + '\n';
-      message += '🖼️ Logo: ' + repoInfo.logoUrl + '\n';
-    }
-    
-    message += '\nSAFETY FEATURES:\n';
-    message += '• Duplicate prevention (' + CONFIG.DUPLICATE_CHECK_DAYS + ' days)\n';
-    message += '• Rate limiting (' + CONFIG.MAX_EMAILS_PER_HOUR + '/hour, ' + CONFIG.MAX_EMAILS_PER_DAY + '/day)\n';
-    message += '• GitHub-hosted images (no Drive permissions needed)\n';
-    message += '• Auto sheet detection\n';
-    message += '• Enhanced error handling\n';
-    message += '• Comprehensive logging\n';
-    
-    SpreadsheetApp.getUi().alert('GitHub Setup Check Results', message, SpreadsheetApp.getUi().ButtonSet.OK);
-    
-  } catch (error) {
-    SpreadsheetApp.getUi().alert('Error', 'Setup check failed: ' + error.toString(), SpreadsheetApp.getUi().ButtonSet.OK);
-  }
-}
-
-/**
- * Test email for selected row
- */
-function testEmailForRow() {
-  try {
-    var sheet = SpreadsheetApp.getActiveSheet();
-    var mainSheet = getMainSheet();
-    
-    if (!mainSheet) {
-      SpreadsheetApp.getUi().alert('Error', 'Could not find main data sheet.', SpreadsheetApp.getUi().ButtonSet.OK);
-      return;
-    }
-    
-    if (sheet.getName() !== mainSheet.getName()) {
-      SpreadsheetApp.getUi().alert('Error', 'Please select the main data sheet "' + mainSheet.getName() + '" first.', SpreadsheetApp.getUi().ButtonSet.OK);
-      return;
-    }
-    
-    var activeRange = sheet.getActiveRange();
-    if (!activeRange) {
-      SpreadsheetApp.getUi().alert('Error', 'Please select a cell first.', SpreadsheetApp.getUi().ButtonSet.OK);
-      return;
-    }
-    
-    var row = activeRange.getRow();
-    if (row === 1) {
-      SpreadsheetApp.getUi().alert('Error', 'Please select a data row, not the header.', SpreadsheetApp.getUi().ButtonSet.OK);
-      return;
-    }
-    
-    var mapping = getColumnMapping(sheet);
-    if (!mapping || !mapping.email || !mapping.ordered) {
-      SpreadsheetApp.getUi().alert('Error', 'Required columns not found.', SpreadsheetApp.getUi().ButtonSet.OK);
-      return;
-    }
-    
-    var rowData = getRowData(sheet, row, mapping);
-    if (!rowData) {
-      SpreadsheetApp.getUi().alert('Error', 'Could not read row data.', SpreadsheetApp.getUi().ButtonSet.OK);
-      return;
-    }
-    
-    var ui = SpreadsheetApp.getUi();
-    var repoInfo = getRepositoryInfo();
-    var message = 'GITHUB TEST EMAIL DETAILS:\n\n';
-    message += 'Sheet: ' + sheet.getName() + '\n';
-    message += 'Row: ' + row + '\n';
-    message += 'Email: ' + (rowData.email || '(empty)') + '\n';
-    message += 'Name: ' + (rowData.name || '(empty)') + '\n';
-    message += 'PO: ' + (rowData.po || '(empty)') + '\n';
-    message += 'Description: ' + (rowData.description || '(empty)') + '\n\n';
-    
-    try {
-      var senderEmail = getSenderEmail();
-      message += 'Sender: ' + senderEmail + '\n';
-    } catch (senderError) {
-      message += 'Sender: ERROR - ' + senderError.message + '\n';
-    }
-    
-    message += 'Logo: ' + repoInfo.logoUrl + '\n';
-    message += 'Version: ' + repoInfo.version + '\n\n';
-    message += 'This will send a REAL email with GitHub-hosted logo. Continue?';
-    
-    var response = ui.alert('Confirm GitHub Test Email', message, ui.ButtonSet.YES_NO);
-    
-    if (response !== ui.Button.YES) {
-      return;
-    }
-    
-    logToSheet('MANUAL GITHUB TEST: Processing row ' + row);
-    
-    try {
-      processOrderRow(sheet, row, mapping);
-      logToSheet('GITHUB TEST EMAIL: Sent to ' + rowData.email + ' with logo from ' + repoInfo.logoUrl);
-      
-      ui.alert('Test Email Sent!', 
-        'GitHub test email sent successfully! 🎉\n\n' +
-        'Email sent to: ' + rowData.email + '\n' +
-        'Logo loaded from: GitHub repository\n\n' +
-        'Check the recipient\'s email to verify the logo displays correctly.',
-        ui.ButtonSet.OK);
-        
-    } catch (error) {
-      if (error.toString().indexOf('Duplicate email prevented') !== -1) {
-        var overrideResponse = ui.alert('Duplicate Detected', 
-          'This email was already sent recently. Send anyway for testing?', 
-          ui.ButtonSet.YES_NO);
-        
-        if (overrideResponse === ui.Button.YES) {
-          if (mapping.notified) {
-            sheet.getRange(row, mapping.notified).setValue('');
-          }
-          processOrderRow(sheet, row, mapping);
-          
-          ui.alert('Test Email Sent!', 
-            'GitHub test email sent successfully (duplicate override)! 🎉\n\n' +
-            'Check the Automation_Log for details.',
-            ui.ButtonSet.OK);
-        }
-      } else {
-        throw error;
-      }
-    }
-    
-  } catch (error) {
-    SpreadsheetApp.getUi().alert('Test Failed', 
-      'GitHub test failed: ' + error.toString() + 
-      '\n\nCheck the Automation_Log for details.', 
-      SpreadsheetApp.getUi().ButtonSet.OK);
-    logToSheet('GITHUB TEST FAILED: ' + error.toString());
-  }
-}
-
-/**
- * Configure sender email
- */
-function configureSenderEmail() {
-  try {
-    var ui = SpreadsheetApp.getUi();
-    
-    var currentSender = '';
-    try {
-      currentSender = getSenderEmail();
-    } catch (e) {
-      currentSender = 'Error: ' + e.message;
-    }
-    
-    var message = 'EMAIL SENDER CONFIGURATION (GitHub Edition)\n\n';
-    message += 'Current sender: ' + currentSender + '\n\n';
-    message += 'Choose how emails should be sent:\n\n';
-    message += '1. AUTO - Use current user email (recommended)\n';
-    message += '2. CONFIG - Use email from Config sheet\n';
-    message += '3. SPECIFIC - Use a specific email address\n\n';
-    message += 'Which option would you like to use?';
-    
-    var response = ui.alert('Configure Sender Email', message, ui.ButtonSet.YES_NO_CANCEL);
-    
-    var selectedOption = '';
-    if (response === ui.Button.YES) {
-      selectedOption = 'auto';
-    } else if (response === ui.Button.NO) {
-      var optionResponse = ui.prompt('Sender Email Options', 
-        'Enter your choice:\n\n' +
-        '1 = AUTO (current user)\n' +
-        '2 = CONFIG (from Config sheet)\n' +
-        '3 = SPECIFIC (enter email address)\n\n' +
-        'Enter 1, 2, or 3:', 
-        ui.ButtonSet.OK_CANCEL);
-      
-      if (optionResponse.getSelectedButton() === ui.Button.OK) {
-        var choice = optionResponse.getResponseText().trim();
-        
-        if (choice === '1') {
-          selectedOption = 'auto';
-        } else if (choice === '2') {
-          selectedOption = 'config';
-          var configSheet = SpreadsheetApp.getActive().getSheetByName('Config');
-          if (!configSheet) {
-            var createSheet = ui.alert('Create Config Sheet', 
-              'Config sheet does not exist. Create it now?', 
-              ui.ButtonSet.YES_NO);
-            if (createSheet === ui.Button.YES) {
-              configSheet = SpreadsheetApp.getActive().insertSheet('Config');
-              configSheet.getRange(1, 1, 3, 2).setValues([
-                ['SENDER_EMAIL', 'your-email@example.com'],
-                ['REPLY_TO', 'your-reply-email@example.com'],
-                ['GITHUB_REPO', GITHUB_CONFIG.username + '/' + GITHUB_CONFIG.repository]
-              ]);
-              configSheet.getRange(1, 1, 1, 2).setFontWeight('bold');
-              ui.alert('Config Sheet Created', 
-                'Config sheet created with example values. Please edit the SENDER_EMAIL value.', 
-                ui.ButtonSet.OK);
-            }
-          } else {
-            ui.alert('Using Config Sheet', 
-              'Make sure the Config sheet has a row with:\nSENDER_EMAIL | your-email@domain.com', 
-              ui.ButtonSet.OK);
-          }
-        } else if (choice === '3') {
-          var emailResponse = ui.prompt('Specific Email Address', 
-            'Enter the email address to send from:', 
-            ui.ButtonSet.OK_CANCEL);
-          if (emailResponse.getSelectedButton() === ui.Button.OK) {
-            var emailAddress = emailResponse.getResponseText().trim();
-            if (isValidEmail(emailAddress)) {
-              selectedOption = emailAddress;
-            } else {
-              ui.alert('Invalid Email', 'Please enter a valid email address.', ui.ButtonSet.OK);
-              return;
-            }
-          }
-        } else {
-          ui.alert('Invalid Choice', 'Please enter 1, 2, or 3.', ui.ButtonSet.OK);
-          return;
-        }
-      }
-    } else {
-      return;
-    }
-    
-    if (selectedOption) {
-      logToSheet('Sender email configuration changed to: ' + selectedOption);
-      CONFIG.EMAIL_SENDER = selectedOption;
-      
-      var confirmMessage = 'Sender email configuration updated! 🎉\n\n';
-      confirmMessage += 'New setting: ' + selectedOption + '\n\n';
-      
-      try {
-        var newSender = getSenderEmail();
-        confirmMessage += 'Resolved sender email: ' + newSender + '\n\n';
-        confirmMessage += 'GitHub repository: ' + GITHUB_CONFIG.username + '/' + GITHUB_CONFIG.repository + '\n\n';
-        confirmMessage += 'Note: This setting will reset when the script reloads. For permanent changes, modify the CONFIG.EMAIL_SENDER value in the code.';
-      } catch (e) {
-        confirmMessage += 'Error testing new configuration: ' + e.message;
-      }
-      
-      ui.alert('Configuration Updated', confirmMessage, ui.ButtonSet.OK);
-    }
-    
-  } catch (error) {
-    SpreadsheetApp.getUi().alert('Configuration Error', 'Failed to configure sender email: ' + error.toString(), SpreadsheetApp.getUi().ButtonSet.OK);
-  }
-}
-
-/**
- * View current configuration with GitHub details
- */
-function viewCurrentConfig() {
-  try {
-    var sheet = getMainSheet();
-    var repoInfo = getRepositoryInfo();
-    var message = 'CURRENT SYSTEM CONFIGURATION (GitHub Edition)\n\n';
-    
-    // Sheet information
-    if (sheet) {
-      message += 'SHEET CONFIG:\n';
-      message += '📊 Main Sheet: "' + sheet.getName() + '"\n';
-      var mapping = getColumnMapping(sheet);
-      if (mapping) {
-        message += '📧 Email Column: ' + (mapping.email ? 'Column ' + mapping.email : 'Not found') + '\n';
-        message += '📋 Order Status Column: ' + (mapping.ordered ? 'Column ' + mapping.ordered : 'Not found') + '\n';
-        message += '🔢 PO Number Column: ' + (mapping.po ? 'Column ' + mapping.po : 'Not found') + '\n';
-      }
-    } else {
-      message += 'SHEET CONFIG:\n';
-      message += '📊 Main Sheet: Not found\n';
-    }
-    
-    message += '\n';
-    
-    // GitHub configuration
-    message += 'GITHUB CONFIG:\n';
-    message += '🐙 Repository: ' + repoInfo.url + '\n';
-    message += '🏷️ Version: ' + repoInfo.version + '\n';
-    message += '🖼️ Logo URL: ' + repoInfo.logoUrl + '\n';
-    message += '👤 Username: ' + GITHUB_CONFIG.username + '\n';
-    message += '📁 Repo Name: ' + GITHUB_CONFIG.repository + '\n';
-    message += '🌿 Branch: ' + GITHUB_CONFIG.branch + '\n';
-    
-    message += '\n';
-    
-    // Email configuration
-    message += 'EMAIL CONFIG:\n';
-    message += '⚙️ Sender Config: ' + CONFIG.EMAIL_SENDER + '\n';
-    try {
-      var currentSender = getSenderEmail();
-      message += '📤 Active Sender: ' + currentSender + '\n';
-    } catch (e) {
-      message += '📤 Active Sender: ERROR - ' + e.message + '\n';
-    }
-    message += '📝 Subject: ' + CONFIG.EMAIL_SUBJECT + '\n';
-    message += '✍️ Signature: ' + CONFIG.EMAIL_SIGNATURE + '\n';
-    
-    message += '\n';
-    
-    // Safety settings
-    message += 'SAFETY SETTINGS:\n';
-    message += '⏱️ Rate Limits: ' + CONFIG.MAX_EMAILS_PER_HOUR + '/hour, ' + CONFIG.MAX_EMAILS_PER_DAY + '/day\n';
-    message += '🔄 Duplicate Check: ' + CONFIG.DUPLICATE_CHECK_DAYS + ' days\n';
-    message += '📎 Attach PDFs: ' + (CONFIG.ATTACH_QUOTE_PDF ? 'Yes' : 'No') + '\n';
-    
-    message += '\n';
-    
-    // User information
-    try {
-      var currentUser = Session.getActiveUser().getEmail();
-      message += 'USER INFO:\n';
-      message += '👤 Current User: ' + currentUser + '\n';
-    } catch (e) {
-      message += 'USER INFO:\n';
-      message += '👤 Current User: Could not determine\n';
-    }
-    
-    message += '🔧 onEdit Trigger: Check manually in Apps Script > Triggers\n';
-    
-    message += '\n';
-    message += 'FEATURES:\n';
-    for (var i = 0; i < repoInfo.features.length; i++) {
-      message += '• ' + repoInfo.features[i] + '\n';
-    }
-    
-    SpreadsheetApp.getUi().alert('Current Configuration', message, SpreadsheetApp.getUi().ButtonSet.OK);
-    
-  } catch (error) {
-    SpreadsheetApp.getUi().alert('Configuration Error', 'Failed to get current configuration: ' + error.toString(), SpreadsheetApp.getUi().ButtonSet.OK);
-  }
-}
-
-// =============================================================================
-// MAINTENANCE AND UTILITY FUNCTIONS
-// =============================================================================
-
-/**
- * View email backup log
- */
-function viewEmailBackupLog() {
-  try {
-    var backupSheet = SpreadsheetApp.getActive().getSheetByName(CONFIG.BACKUP_SHEET_NAME);
-    
-    if (!backupSheet) {
-      SpreadsheetApp.getUi().alert('Info', 'No email backup log found yet.', SpreadsheetApp.getUi().ButtonSet.OK);
-      return;
-    }
-    
-    backupSheet.activate();
-    
-    var lastRow = backupSheet.getLastRow();
-    var message = 'Email backup log contains ' + Math.max(0, lastRow - 1) + ' entries.\n\n';
-    message += 'The log shows all email attempts with GitHub version tracking.\n\n';
-    message += 'Columns include:\n';
-    message += '• Timestamp\n• Email address\n• PO Number\n• Description\n• Status\n• Error Message\n• Message Key\n• GitHub Version';
-    
-    SpreadsheetApp.getUi().alert('Email Backup Log', message, SpreadsheetApp.getUi().ButtonSet.OK);
-    
-  } catch (error) {
-    SpreadsheetApp.getUi().alert('Error', 'Failed to view backup log: ' + error.toString(), SpreadsheetApp.getUi().ButtonSet.OK);
-  }
-}
-
-/**
- * View rate limit status
- */
-function viewRateLimitStatus() {
-  try {
-    var rateLimitSheet = SpreadsheetApp.getActive().getSheetByName(CONFIG.RATE_LIMIT_SHEET_NAME);
-    
-    if (!rateLimitSheet) {
-      SpreadsheetApp.getUi().alert('Rate Limit Status', 'No emails sent yet.', SpreadsheetApp.getUi().ButtonSet.OK);
-      return;
-    }
-    
-    var now = new Date();
-    var oneHourAgo = new Date(now.getTime() - (60 * 60 * 1000));
-    var oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
-    
-    var lastRow = rateLimitSheet.getLastRow();
-    var hourlyCount = 0;
-    var dailyCount = 0;
-    
-    if (lastRow > 1) {
-      var checkRows = Math.min(200, lastRow - 1);
-      var data = rateLimitSheet.getRange(lastRow - checkRows + 1, 1, checkRows, 3).getValues();
-      
-      for (var i = 0; i < data.length; i++) {
-        var timestamp = data[i][0];
-        if (timestamp instanceof Date) {
-          if (timestamp > oneHourAgo) {
-            hourlyCount++;
-          }
-          if (timestamp > oneDayAgo) {
-            dailyCount++;
-          }
-        }
-      }
-    }
-    
-    var message = 'CURRENT RATE LIMIT STATUS:\n\n';
-    message += '⏰ Last Hour: ' + hourlyCount + '/' + CONFIG.MAX_EMAILS_PER_HOUR + ' emails\n';
-    message += '📅 Last 24 Hours: ' + dailyCount + '/' + CONFIG.MAX_EMAILS_PER_DAY + ' emails\n\n';
-    
-    if (hourlyCount >= CONFIG.MAX_EMAILS_PER_HOUR) {
-      message += '🚫 HOURLY LIMIT REACHED\n';
-      message += 'Please wait before sending more emails.\n';
-    } else if (dailyCount >= CONFIG.MAX_EMAILS_PER_DAY) {
-      message += '🚫 DAILY LIMIT REACHED\n';
-      message += 'Please wait until tomorrow.\n';
-    } else {
-      message += '✅ WITHIN LIMITS\n';
-      message += 'Emails can be sent normally.\n';
-    }
-    
-    message += '\nThese limits help prevent accidental spam and protect your Gmail reputation.';
-    
-    SpreadsheetApp.getUi().alert('Rate Limit Status', message, SpreadsheetApp.getUi().ButtonSet.OK);
-    
-  } catch (error) {
-    SpreadsheetApp.getUi().alert('Error', 'Failed to check rate limit status: ' + error.toString(), SpreadsheetApp.getUi().ButtonSet.OK);
-  }
-}
-
-/**
- * Reset rate limits (emergency function)
- */
-function resetRateLimits() {
-  try {
-    var ui = SpreadsheetApp.getUi();
-    var response = ui.alert('Reset Rate Limits', 
-      'Are you sure you want to reset the rate limits?\n\n' +
-      'This should only be done in emergency situations.\n' +
-      'Rate limits protect your Gmail reputation.',
-      ui.ButtonSet.YES_NO);
-    
-    if (response !== ui.Button.YES) {
-      return;
-    }
-    
-    var rateLimitSheet = SpreadsheetApp.getActive().getSheetByName(CONFIG.RATE_LIMIT_SHEET_NAME);
-    
-    if (rateLimitSheet) {
-      var lastRow = rateLimitSheet.getLastRow();
-      if (lastRow > 1) {
-        rateLimitSheet.deleteRows(2, lastRow - 1);
-      }
-      logToSheet('ADMIN ACTION: Rate limits reset by user (GitHub Edition)');
-    }
-    
-    ui.alert('Rate Limits Reset', 'Rate limits have been reset.\n\nPlease use this feature responsibly.', ui.ButtonSet.OK);
-    
-  } catch (error) {
-    SpreadsheetApp.getUi().alert('Error', 'Failed to reset rate limits: ' + error.toString(), SpreadsheetApp.getUi().ButtonSet.OK);
-  }
-}
-
-/**
- * Audit data integrity
- */
-function auditDataIntegrity() {
-  try {
-    var sheet = getMainSheet();
-    if (!sheet) {
-      throw new Error('Could not find main data sheet');
-    }
-    
-    var mapping = getColumnMapping(sheet);
-    if (!mapping) {
-      throw new Error('Could not determine column mapping');
-    }
-    
-    var lastRow = sheet.getLastRow();
-    var issues = [];
-    var fixes = 0;
-    
-    logToSheet('=== GITHUB DATA INTEGRITY AUDIT STARTED ===');
-    logToSheet('Auditing sheet: ' + sheet.getName());
-    logToSheet('GitHub repository: ' + GITHUB_CONFIG.username + '/' + GITHUB_CONFIG.repository);
-    
-    for (var row = 2; row <= lastRow; row++) {
-      var rowData = getRowData(sheet, row, mapping);
-      
-      if (rowData.email && !isValidEmail(rowData.email)) {
-        issues.push('Row ' + row + ': Invalid email format - ' + rowData.email);
-      }
-      
-      if (mapping.ordered) {
-        var orderStatus = sheet.getRange(row, mapping.ordered).getValue();
-        if (isYesValue(orderStatus) && !rowData.po) {
-          issues.push('Row ' + row + ': Order marked as placed but no PO number');
-        }
-      }
-      
-      if (rowData.messageKey && !rowData.notified) {
-        issues.push('Row ' + row + ': Has MessageKey but no notification timestamp');
-      }
-      
-      if (rowData.email && rowData.email !== rowData.email.toLowerCase().trim()) {
-        sheet.getRange(row, mapping.email).setValue(rowData.email.toLowerCase().trim());
-        fixes++;
-      }
-    }
-    
-    // Check GitHub configuration integrity
-    if (!CONFIG.LOGO_URL.includes(GITHUB_CONFIG.username)) {
-      issues.push('Logo URL does not match GitHub username');
-    }
-    
-    logToSheet('Audit complete - Found ' + issues.length + ' issues, made ' + fixes + ' automatic fixes');
-    
-    if (issues.length > 0) {
-      logToSheet('ISSUES FOUND:');
-      for (var i = 0; i < Math.min(issues.length, 20); i++) {
-        logToSheet('- ' + issues[i]);
-      }
-      if (issues.length > 20) {
-        logToSheet('... and ' + (issues.length - 20) + ' more issues');
-      }
-    }
-    
-    logToSheet('=== GITHUB DATA INTEGRITY AUDIT COMPLETED ===');
-    
-    var repoInfo = getRepositoryInfo();
-    var message = 'Data integrity audit completed for "' + sheet.getName() + '".\n\n';
-    message += '📊 Found ' + issues.length + ' issues\n';
-    message += '🔧 Made ' + fixes + ' automatic fixes\n';
-    message += '🐙 GitHub repository: ' + repoInfo.url + '\n';
-    message += ''
-    
-    SpreadsheetApp.getUi().alert('Audit Complete', message, SpreadsheetApp.getUi().ButtonSet.OK);
-    
-  } catch (error) {
-    logToSheet('Data audit failed: ' + error.toString());
-    SpreadsheetApp.getUi().alert('Audit Failed', 'Data integrity audit failed: ' + error.toString(), SpreadsheetApp.getUi().ButtonSet.OK);
-  }
-}
-
-
+      logToSheet('
