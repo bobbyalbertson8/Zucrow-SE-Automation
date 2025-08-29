@@ -581,9 +581,16 @@ function buildEmailContent(data) {
                 '<div style="color: #333;">' + escapeHtml(data.description) + '</div></div>';
   }
   
-  htmlBody += '<div style="padding: 16px 20px; border-bottom: 1px solid #f0f0f0; display: flex;">' +
-              '<div style="font-weight: 600; color: #555; width: 140px; flex-shrink: 0;">Status:</div>' +
-              '<div style="color: #28a745; font-weight: 600; font-size: 16px;"><!--[if !mso]><!--><span style="font-family:'Segoe UI Emoji','Segoe UI Symbol','Apple Color Emoji','Noto Color Emoji',Arial,sans-serif;">&#10003;</span><!--<![endif]--><!--[if mso]><span style="font-family:Arial,sans-serif;">[OK]</span><![endif]--> Order Placed</div></div>';
+  htmlBody += "<div style='padding: 16px 20px; border-bottom: 1px solid #f0f0f0; display: flex;'>" +
+              "<div style='font-weight: 600; color: #555; width: 140px; flex-shrink: 0;'>Status:</div>" +
+              "<div style='color: #28a745; font-weight: 600; font-size: 16px;'>" +
+                "<!--[if !mso]><!--><span style=\"font-family:'Segoe UI Emoji','Segoe UI Symbol','Apple Color Emoji','Noto Color Emoji',Arial,sans-serif;\">&#10003;</span><!--<![endif]-->" +
+                "<!--[if mso]><span style='font-family:Arial,sans-serif;'>[OK]</span><![endif]-->" +
+                "&nbsp;Order Placed" +
+              "</div></div>";
+
+
+
   
   htmlBody += '<div style="padding: 16px 20px; display: flex;">' +
               '<div style="font-weight: 600; color: #555; width: 140px; flex-shrink: 0;">Date:</div>' +
@@ -604,9 +611,15 @@ function buildEmailContent(data) {
   // GitHub attribution with dual logo info
   if (GITHUB_CONFIG.username && GITHUB_CONFIG.repository) {
     var logoInfo = selectedLogos.length > 1 ? ' (dual logo)' : ' (' + selectedLogos[0].altText + ')';
-    htmlBody += '<p style="margin: 10px 0 0 0; font-size: 12px; color: #999;">' +
-                '<a href="https://github.com/' + GITHUB_CONFIG.username + '/' + GITHUB_CONFIG.repository + '" ' +
-                'style="color: #999; text-decoration: none;">Powered by GitHub automation&nbsp;<!--[if !mso]><!--><span style="font-family:'Segoe UI Emoji','Segoe UI Symbol','Apple Color Emoji','Noto Color Emoji',Arial,sans-serif;">&#9889;</span><!--<![endif]--><!--[if mso]><span style="font-family:Arial,sans-serif;">[Lightning]</span><![endif]-->' + logoInfo + '</a></p>';
+    htmlBody += "<p style='margin: 10px 0 0 0; font-size: 12px; color: #999;'>" +
+              "<a href='https://github.com/" + GITHUB_CONFIG.username + "/" + GITHUB_CONFIG.repository + "' " +
+              "style='color: #999; text-decoration: none;'>" +
+              "Powered by GitHub automation&nbsp;" +
+              "<!--[if !mso]><!--><span style=\"font-family:'Segoe UI Emoji','Segoe UI Symbol','Apple Color Emoji','Noto Color Emoji',Arial,sans-serif;\">&#9889;</span><!--<![endif]-->" +
+              "<!--[if mso]><span style='font-family:Arial,sans-serif;'>[Lightning]</span><![endif]-->" +
+              logoInfo +
+              "</a></p>";
+
   }
   
   htmlBody += '</div></div>';
@@ -618,8 +631,7 @@ function buildEmailContent(data) {
   textBody += '=============\n';
   if (data.po) textBody += 'PO Number: ' + data.po + '\n';
   if (data.description) textBody += 'Description: ' + data.description + '\n';
-  textBody += 'Status: Order Placed [OK]
-';
+  textBody += 'Status: Order Placed [OK]';
   textBody += 'Date: ' + new Date().toLocaleString() + '\n\n';
   textBody += 'NEXT STEPS\n';
   textBody += '==========\n';
