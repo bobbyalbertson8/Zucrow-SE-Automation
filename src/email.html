@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
   <head>
@@ -8,64 +7,121 @@
   </head>
   <body style="margin:0;padding:0;background:#f5f7fb;">
     <div style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; max-width:640px; margin:0 auto; padding:24px;">
+      
+      <!-- Logo Section -->
       <? if (logos && logos.length) { ?>
-        <div style="display:flex; gap:16px; align-items:center; justify-content:flex-start; margin-bottom:16px;">
+        <div style="display:flex; gap:16px; align-items:center; justify-content:flex-start; margin-bottom:24px;">
           <? logos.forEach(function(logo){ ?>
-            <img src="<?= logo.url ?>" alt="<?= logo.alt ?>" style="max-height:48px; height:auto;"/>
+            <img src="<?= logo.url ?>" alt="<?= logo.alt ?>" style="max-height:60px; height:auto; max-width:<?= logo.maxW ?>;" onerror="this.style.display='none'"/>
           <? }); ?>
         </div>
       <? } ?>
-      <div style="background:#ffffff; border-radius:12px; padding:24px; box-shadow:0 1px 3px rgba(0,0,0,0.06);">
-        <p style="font-size:16px; color:#111; margin:0 0 12px;">
-          <? if (data.name) { ?>Hello <?= data.name ?>,<? } else { ?>Hello,<? } ?>
-        </p>
-        <p style="font-size:16px; color:#111; margin:0 0 16px;">
-          Your purchase request has been <strong>ordered</strong>.
-        </p>
 
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%; border-collapse:collapse; margin:0 0 16px;">
-          <? if (data.poNumber) { ?>
-          <tr>
-            <td style="padding:8px 0; color:#555; width:35%;">PO Number</td>
-            <td style="padding:8px 0; color:#111;"><strong><?= data.poNumber ?></strong></td>
-          </tr>
-          <? } ?>
-          <? if (data.item) { ?>
-          <tr>
-            <td style="padding:8px 0; color:#555;">Item</td>
-            <td style="padding:8px 0; color:#111;"><?= data.item ?></td>
-          </tr>
-          <? } ?>
-          <? if (data.quantity) { ?>
-          <tr>
-            <td style="padding:8px 0; color:#555;">Quantity</td>
-            <td style="padding:8px 0; color:#111;"><?= data.quantity ?></td>
-          </tr>
-          <? } ?>
-          <? if (data.cost) { ?>
-          <tr>
-            <td style="padding:8px 0; color:#555;">Cost</td>
-            <td style="padding:8px 0; color:#111;"><strong><?= data.cost ?></strong></td>
-          </tr>
-          <? } ?>
-          <tr>
-            <td style="padding:8px 0; color:#555;">Status</td>
-            <td style="padding:8px 0; color:#111;"><?= data.status ?></td>
-          </tr>
-          <tr>
-            <td style="padding:8px 0; color:#555;">Time</td>
-            <td style="padding:8px 0; color:#111;"><?= data.timestamp ?></td>
-          </tr>
-        </table>
+      <!-- Main Email Content -->
+      <div style="background:#ffffff; border-radius:12px; padding:32px; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+        
+        <!-- Header -->
+        <div style="border-bottom:1px solid #e5e7eb; padding-bottom:20px; margin-bottom:24px;">
+          <h1 style="margin:0; font-size:24px; font-weight:600; color:#111;">Purchase Order Placed</h1>
+          <p style="margin:8px 0 0; font-size:16px; color:#666;">
+            <? if (data.name) { ?>Hello <?= data.name ?>,<? } else { ?>Hello,<? } ?>
+          </p>
+        </div>
 
-        <p style="font-size:14px; color:#666; margin:16px 0 0;">
-          If you have questions, reply to this email.
-        </p>
+        <!-- Status Message -->
+        <div style="background:#f0f9ff; border:1px solid #0ea5e9; border-radius:8px; padding:16px; margin-bottom:24px;">
+          <p style="margin:0; font-size:16px; color:#0c4a6e;">
+            <strong>✓ Your purchase request has been ordered and is being processed.</strong>
+          </p>
+        </div>
+
+        <!-- Order Details Table -->
+        <div style="margin-bottom:24px;">
+          <h2 style="margin:0 0 16px; font-size:18px; font-weight:600; color:#111;">Order Details</h2>
+          
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%; border-collapse:collapse;">
+            <? if (data.poNumber) { ?>
+            <tr>
+              <td style="padding:12px 0; color:#555; width:35%; border-bottom:1px solid #f3f4f6; font-weight:500;">PO Number</td>
+              <td style="padding:12px 0; color:#111; border-bottom:1px solid #f3f4f6;"><strong><?= data.poNumber ?></strong></td>
+            </tr>
+            <? } ?>
+            
+            <? if (data.item) { ?>
+            <tr>
+              <td style="padding:12px 0; color:#555; border-bottom:1px solid #f3f4f6; font-weight:500;">Description</td>
+              <td style="padding:12px 0; color:#111; border-bottom:1px solid #f3f4f6; word-break:break-word;"><?= data.item ?></td>
+            </tr>
+            <? } ?>
+            
+            <? if (data.quantity) { ?>
+            <tr>
+              <td style="padding:12px 0; color:#555; border-bottom:1px solid #f3f4f6; font-weight:500;">Quantity</td>
+              <td style="padding:12px 0; color:#111; border-bottom:1px solid #f3f4f6;"><?= data.quantity ?></td>
+            </tr>
+            <? } ?>
+            
+            <? if (data.cost) { ?>
+            <tr>
+              <td style="padding:12px 0; color:#555; border-bottom:1px solid #f3f4f6; font-weight:500;">Cost</td>
+              <td style="padding:12px 0; color:#111; border-bottom:1px solid #f3f4f6;"><strong style="color:#059669;"><?= data.cost ?></strong></td>
+            </tr>
+            <? } ?>
+            
+            <? if (data.quotePdf) { ?>
+            <tr>
+              <td style="padding:12px 0; color:#555; border-bottom:1px solid #f3f4f6; font-weight:500;">Quote PDF</td>
+              <td style="padding:12px 0; color:#111; border-bottom:1px solid #f3f4f6;">
+                <a href="<?= data.quotePdf ?>" style="color:#0ea5e9; text-decoration:none;">View Quote</a>
+              </td>
+            </tr>
+            <? } ?>
+            
+            <tr>
+              <td style="padding:12px 0; color:#555; border-bottom:1px solid #f3f4f6; font-weight:500;">Status</td>
+              <td style="padding:12px 0; color:#111; border-bottom:1px solid #f3f4f6;">
+                <span style="background:#dcfce7; color:#166534; padding:4px 12px; border-radius:20px; font-size:14px; font-weight:500;">
+                  <?= data.status ?>
+                </span>
+              </td>
+            </tr>
+            
+            <tr>
+              <td style="padding:12px 0; color:#555; font-weight:500;">Order Date</td>
+              <td style="padding:12px 0; color:#111;"><?= data.timestamp ?></td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Next Steps -->
+        <div style="background:#fef3c7; border:1px solid #f59e0b; border-radius:8px; padding:16px; margin-bottom:20px;">
+          <h3 style="margin:0 0 8px; font-size:16px; font-weight:600; color:#92400e;">What's Next?</h3>
+          <p style="margin:0; font-size:14px; color:#92400e;">
+            You will receive tracking information and delivery updates via email once the order ships. 
+            Estimated processing time is 1-3 business days.
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="border-top:1px solid #e5e7eb; padding-top:20px;">
+          <p style="font-size:14px; color:#666; margin:0 0 8px;">
+            Questions about your order? Reply to this email or contact our procurement team.
+          </p>
+          <p style="font-size:12px; color:#9ca3af; margin:0;">
+            Order Reference: Row <?= data.rowNumber ?> | Timestamp: <?= data.timestamp ?>
+          </p>
+        </div>
       </div>
 
-      <p style="font-size:12px; color:#889; margin:16px 0 0; text-align:center;">
-        This email was generated automatically by Google Apps Script.
-      </p>
+      <!-- Email Footer -->
+      <div style="text-align:center; margin-top:24px;">
+        <p style="font-size:12px; color:#9ca3af; margin:0 0 8px;">
+          This email was generated automatically by Google Apps Script.
+        </p>
+        <p style="font-size:11px; color:#d1d5db; margin:0;">
+          Please do not reply to automated messages from noreply addresses.
+        </p>
+      </div>
     </div>
   </body>
 </html>
