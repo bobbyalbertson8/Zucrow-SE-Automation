@@ -13,6 +13,91 @@ function onEdit(e) {
   }
 }
 
+/**
+ * NEW: Form submission trigger handler
+ * Sends email notification to purchasing team when form is submitted
+ */
+function onFormSubmit(e) {
+  try {
+    onFormSubmitHandler(e);
+  } catch (error) {
+    console.error('Error in onFormSubmit:', error.toString());
+    // Optional: Send error notification to admin
+    MailApp.sendEmail('admin@example.com', 'Form Submit Error', error.toString());
+  }
+}
+
+function onFormSubmitHandler(e) {
+  console.log('Form submission detected');
+  
+  const cfg = getConfig_();
+  
+  // Get purchasing team emails from config
+  const purchasingEmail = cfg.PURCHASING_EMAIL;
+  const purchasingCcEmail = cfg.PURCHASING_CC_EMAIL;
+  
+  if (!purchasingEmail) {
+    console.error('No purchasing email configured. Please set PURCHASING_EMAIL in script properties.');
+    return;
+  }
+  
+  const sheet = getActiveSheet_(cfg);
+  const headerMap = getHeaderMap_(sheet);
+  
+  // Get the submitted row (last row)
+  const submittedRow = sheet.getLastRow();
+  const rowObj = getRowObject_(sheet, submittedRow, headerMap);
+  
+  console.log('Processing form submission for row:', submittedRow);
+  console.log('Submitted data:', rowObj);
+  
+  // Extract data from the submitted row
+  const name = headerMap[cfg.NAME_HEADER] ? rowObj[cfg.NAME_HEADER] : '';
+  const email = headerMap[cfg.EMAIL_HEADER] ? rowObj[cfg.EMAIL_HEADER] : '';
+  
+  const costRaw = headerMap[cfg.COST_HEADER] ? rowObj[cfg.COST_HEADER] : '';
+  const costFmt = formatCurrency_(costRaw, cfg.CURRENCY || 'USD');
+  
+  // Map additional fields that might exist in your sheet
+  const item = headerMap['Purchase order description (program and pur'] ? 
+               rowObj['Purchase order description (program and pur'] : 
+               (headerMap['Item'] ? rowObj['Item'] : '');
+  const qty = headerMap['Quantity'] ? rowObj['Quantity'] : '';
+  const po = headerMap['Purchase Order Number'] ? rowObj['Purchase Order Number'] : '';
+  const quotePdf = headerMap['Quote PDF'] ? rowObj['Quote PDF'] : '';
+  const timestamp = headerMap['Timestamp'] ? rowObj['Timestamp'] : nowIso_();
+  
+  const data = {
+    name: name || '',
+    requesterEmail: email || '',
+    status: 'Submitted',
+    cost: costFmt,
+    costRaw: costRaw,
+    item: item,
+    quantity: qty,
+    poNumber: po,
+    quotePdf: quotePdf,
+    rowNumber: submittedRow,
+    timestamp: timestamp,
+    isSubmissionNotification: true
+  };
+  
+  console.log('Purchasing team notification data prepared:', data);
+  
+  const subject = 'New Purchase Request Submitted' + (name ? (' from ' + name) : '');
+  const htmlBody = buildPurchasingTeamEmailHtml_(data, cfg);
+  
+  // Send email to purchasing team
+  try {
+    sendNotificationEmail_(purchasingEmail, subject, htmlBody, purchasingCcEmail);
+    console.log('Purchasing team notification sent successfully');
+    console.log('To:', purchasingEmail);
+    if (purchasingCcEmail) console.log('CC:', purchasingCcEmail);
+  } catch (emailError) {
+    console.error('Failed to send purchasing team notification:', emailError.toString());
+  }
+}
+
 function onEditHandler(e) {
   const cfg = getConfig_();
   const sheet = getActiveSheet_(cfg);
@@ -170,6 +255,11 @@ function testConfiguration() {
     console.log('NAME_HEADER "' + cfg.NAME_HEADER + '" found:', !!headerMap[cfg.NAME_HEADER]);
     console.log('COST_HEADER "' + cfg.COST_HEADER + '" found:', !!headerMap[cfg.COST_HEADER]);
     
+    // Test purchasing team configuration
+    console.log('Testing purchasing team configuration...');
+    console.log('PURCHASING_EMAIL:', cfg.PURCHASING_EMAIL || 'NOT SET');
+    console.log('PURCHASING_CC_EMAIL:', cfg.PURCHASING_CC_EMAIL || 'NOT SET');
+    
     // Test data from a sample row (row 2 if exists)
     if (sheet.getLastRow() >= 2) {
       console.log('Testing sample row 2...');
@@ -185,6 +275,44 @@ function testConfiguration() {
     
   } catch (error) {
     console.error('Configuration test failed:', error.toString());
+    return false;
+  }
+}
+
+/**
+ * Test function for form submission notification
+ */
+function testFormSubmitNotification() {
+  console.log('=== Testing Form Submit Notification ===');
+  
+  const cfg = getConfig_();
+  
+  if (!cfg.PURCHASING_EMAIL) {
+    console.error('PURCHASING_EMAIL not configured. Please run setupPurchasingTeamEmails() first.');
+    return false;
+  }
+  
+  const sheet = getActiveSheet_(cfg);
+  const headerMap = getHeaderMap_(sheet);
+  
+  if (sheet.getLastRow() < 2) {
+    console.error('No data rows found for testing');
+    return false;
+  }
+  
+  // Create a mock submission event using the last row
+  const mockEvent = {
+    range: sheet.getRange(sheet.getLastRow(), 1),
+    values: [sheet.getRange(sheet.getLastRow(), 1, 1, sheet.getLastColumn()).getValues()[0]]
+  };
+  
+  try {
+    onFormSubmitHandler(mockEvent);
+    console.log('✅ Form submission test completed successfully');
+    console.log('Check the purchasing team email:', cfg.PURCHASING_EMAIL);
+    return true;
+  } catch (error) {
+    console.error('❌ Form submission test failed:', error.toString());
     return false;
   }
 }
@@ -433,11 +561,13 @@ function onOpen() {
   ui.createMenu('🧪 Purchase Order Tests')
     .addItem('🔍 Test Configuration', 'testConfiguration')
     .addItem('📧 Test Email Send', 'testSendEmail')
+    .addItem('📝 Test Form Submit Notification', 'testFormSubmitNotification')
     .addSeparator()
     .addItem('🚀 Complete System Test', 'runCompleteSystemTest')
     .addItem('🔄 Manual Complete Test', 'testCompleteSystem')
     .addSeparator()
     .addItem('⚙️ Setup Script Properties', 'setupScriptPropertiesMenu')
+    .addItem('👥 Setup Purchasing Team Emails', 'setupPurchasingTeamEmailsMenu')
     .addItem('📊 View Current Config', 'viewCurrentConfigMenu')
     .addToUi();
 }
@@ -452,6 +582,56 @@ function setupScriptPropertiesMenu() {
     'Script properties have been configured for your sheet structure.\n\nYou can now run tests or use the system normally.',
     SpreadsheetApp.getUi().ButtonSet.OK
   );
+}
+
+/**
+ * NEW: Menu wrapper for setting up purchasing team emails
+ */
+function setupPurchasingTeamEmailsMenu() {
+  const ui = SpreadsheetApp.getUi();
+  
+  // Get purchasing team email
+  const emailResponse = ui.prompt(
+    'Setup Purchasing Team Email',
+    'Enter the primary purchasing team email address:',
+    ui.ButtonSet.OK_CANCEL
+  );
+  
+  if (emailResponse.getSelectedButton() !== ui.Button.OK) {
+    return;
+  }
+  
+  const purchasingEmail = emailResponse.getResponseText().trim();
+  if (!purchasingEmail || purchasingEmail.indexOf('@') < 0) {
+    ui.alert('Invalid Email', 'Please enter a valid email address.', ui.ButtonSet.OK);
+    return;
+  }
+  
+  // Get CC email (optional)
+  const ccResponse = ui.prompt(
+    'Setup Purchasing Team CC Email',
+    'Enter the CC email address (optional, leave blank to skip):',
+    ui.ButtonSet.OK_CANCEL
+  );
+  
+  let ccEmail = '';
+  if (ccResponse.getSelectedButton() === ui.Button.OK) {
+    ccEmail = ccResponse.getResponseText().trim();
+  }
+  
+  // Save to script properties
+  const props = PropertiesService.getScriptProperties();
+  props.setProperties({
+    'PURCHASING_EMAIL': purchasingEmail,
+    'PURCHASING_CC_EMAIL': ccEmail
+  });
+  
+  const message = 'Purchasing team emails configured:\n\n' +
+    'Primary: ' + purchasingEmail + '\n' +
+    (ccEmail ? ('CC: ' + ccEmail + '\n') : 'CC: Not set\n') +
+    '\nForm submissions will now trigger notifications to the purchasing team.';
+  
+  ui.alert('Setup Complete', message, ui.ButtonSet.OK);
 }
 
 /**
@@ -471,6 +651,9 @@ function viewCurrentConfigMenu() {
     'Name Header: "' + cfg.NAME_HEADER + '"\n' +
     'Cost Header: "' + cfg.COST_HEADER + '"\n' +
     'Notified Header: "' + cfg.NOTIFIED_HEADER + '"\n\n' +
+    'PURCHASING TEAM:\n' +
+    'Primary Email: ' + (cfg.PURCHASING_EMAIL || 'NOT SET') + '\n' +
+    'CC Email: ' + (cfg.PURCHASING_CC_EMAIL || 'NOT SET') + '\n\n' +
     'SHEET ANALYSIS:\n' +
     'Active Sheet: "' + sheet.getName() + '"\n' +
     'Headers Found: ' + Object.keys(headerMap).length + '\n' +
