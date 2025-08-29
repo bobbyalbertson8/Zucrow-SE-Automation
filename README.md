@@ -1,4 +1,4 @@
-# GitHub Dual Logo Purchase Order Email Notification System
+# GitHub Zucrow/Spectral Energies Order Email Notification System
 
 An automated Google Sheets system that sends professional email notifications when purchase orders are placed, featuring dual logo support with GitHub-hosted images and intelligent logo selection.
 
