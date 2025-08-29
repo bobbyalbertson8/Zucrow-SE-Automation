@@ -1,6 +1,6 @@
 /**
  * GitHub assets + Script Properties configuration
- * Updated with defaults that match your sheet structure
+ * Updated with defaults that match your sheet structure + purchasing team settings
  */
 
 // --- GitHub assets configuration (edit these to your repo) ---
@@ -29,7 +29,7 @@ function generateGitHubImageUrl_(filename) {
          GITHUB_CONFIG.branch + '/assets/' + filename;
 }
 
-// --- Updated defaults to match your sheet structure ---
+// --- Updated defaults to match your sheet structure + purchasing team ---
 const DEFAULTS = {
   SHEET_NAME: '',                           // blank = first sheet
   STATUS_HEADER: 'Order Placed?',           // Your actual column name
@@ -39,6 +39,11 @@ const DEFAULTS = {
   CC_HEADER: '',                            // You don't have a CC column
   COST_HEADER: 'Cost ($)',                  // Your actual column name
   NOTIFIED_HEADER: 'Notified',              // Your actual column name
+  
+  // NEW: Purchasing team notification settings
+  PURCHASING_EMAIL: '',                     // Primary purchasing team email
+  PURCHASING_CC_EMAIL: '',                  // CC purchasing team email (optional)
+  
   LOGO_STRATEGY: 'conditional',             // Show Purdue logo for @purdue.edu emails
   LOGO2_KEYWORDS: ['purdue', '@purdue.edu', 'university', 'student'],
   LOGO_PRIMARY_ALT: 'Spectral Energies',
@@ -84,4 +89,38 @@ function setupScriptProperties() {
   props.setProperties(settings);
   console.log('Script properties configured:', settings);
   console.log('You can now test with testConfiguration()');
+}
+
+/**
+ * NEW: Helper function to set up purchasing team email addresses
+ * Run this to configure who receives form submission notifications
+ */
+function setupPurchasingTeamEmails() {
+  const props = PropertiesService.getScriptProperties();
+  
+  // UPDATE THESE EMAIL ADDRESSES FOR YOUR PURCHASING TEAM
+  const purchasingSettings = {
+    'PURCHASING_EMAIL': 'purchasing@yourcompany.com',        // CHANGE THIS - Primary recipient
+    'PURCHASING_CC_EMAIL': 'manager@yourcompany.com'        // CHANGE THIS - CC recipient (optional)
+  };
+  
+  props.setProperties(purchasingSettings);
+  console.log('Purchasing team emails configured:', purchasingSettings);
+  console.log('Form submissions will now notify the purchasing team');
+}
+
+/**
+ * Complete setup function - runs both configurations
+ */
+function setupCompleteConfiguration() {
+  console.log('Setting up complete configuration...');
+  
+  setupScriptProperties();
+  setupPurchasingTeamEmails();
+  
+  console.log('✅ Complete configuration setup finished!');
+  console.log('You can now:');
+  console.log('1. Test with testConfiguration()');
+  console.log('2. Test form submissions with testFormSubmitNotification()');
+  console.log('3. Run the complete system test');
 }
