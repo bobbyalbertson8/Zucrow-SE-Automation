@@ -19,17 +19,26 @@
     <!-- Email Container -->
     <div style="max-width:650px; margin:0 auto; background:#ffffff;">
       
-      <!-- Header Section with Logos -->
+      <!-- Header Section with Spectral Energies Logos -->
       <? if (logos && logos.length) { ?>
         <div style="background: linear-gradient(135deg, #dc2626 0%, #ef4444 50%, #f87171 100%); padding:30px 40px; text-align:center;">
           <div style="display:inline-block;">
             <? logos.forEach(function(logo, index){ ?>
               <img src="<?= logo.url ?>" 
                    alt="<?= logo.alt ?>" 
-                   style="max-height:80px; height:auto; max-width:<?= logo.maxW ?>; <?= index > 0 ? 'margin-left:30px;' : '' ?> vertical-align:middle; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15);" 
+                   style="max-height:80px; height:auto; max-width:<?= logo.maxW ?>; <?= index > 0 ? 'margin-left:30px;' : '' ?> vertical-align:middle; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); background:white; padding:10px;" 
                    onerror="this.style.display='none'"/>
             <? }); ?>
           </div>
+          <? if (logos.length > 1) { ?>
+            <div style="color:white; font-size:14px; margin-top:15px; font-weight:500;">
+              Spectral Energies & Purdue Propulsion Partnership
+            </div>
+          <? } else { ?>
+            <div style="color:white; font-size:14px; margin-top:15px; font-weight:500;">
+              Spectral Energies Purchase Request System
+            </div>
+          <? } ?>
         </div>
       <? } ?>
 
