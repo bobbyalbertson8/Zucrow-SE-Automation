@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>New Purchase Request Submitted</title>
+    <!--[if mso]>
+    <noscript>
+      <xml>
+        <o:OfficeDocumentSettings>
+          <o:PixelsPerInch>96</o:PixelsPerInch>
+        </o:OfficeDocumentSettings>
+      </xml>
+    </noscript>
+    <![endif]-->
+  </head>
+  <body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+    
+    <!-- Email Container -->
+    <div style="max-width:650px; margin:0 auto; background:#ffffff;">
+      
+      <!-- Header Section with Logos -->
+      <? if (logos && logos.length) { ?>
+        <div style="background: linear-gradient(135deg, #dc2626 0%, #ef4444 50%, #f87171 100%); padding:30px 40px; text-align:center;">
+          <div style="display:inline-block;">
+            <? logos.forEach(function(logo, index){ ?>
+              <img src="<?= logo.url ?>" 
+                   alt="<?= logo.alt ?>" 
+                   style="max-height:80px; height:auto; max-width:<?= logo.maxW ?>; <?= index > 0 ? 'margin-left:30px;' : '' ?> vertical-align:middle; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15);" 
+                   onerror="this.style.display='none'"/>
+            <? }); ?>
+          </div>
+        </div>
+      <? } ?>
+
+      <!-- Main Content Area -->
+      <div style="padding:50px 40px;">
+        
+        <!-- Title Section -->
+        <div style="text-align:center; margin-bottom:40px;">
+          <h1 style="margin:0 0 12px; font-size:32px; font-weight:700; color:#1f2937; letter-spacing:-0.5px;">
+            🚨 New Purchase Request
+          </h1>
+          <div style="width:60px; height:4px; background:linear-gradient(90deg, #dc2626, #7c3aed); margin:0 auto; border-radius:2px;"></div>
+        </div>
+
+        <!-- Alert Card -->
+        <div style="background:linear-gradient(135deg, #fef2f2 0%, #fff5f5 100%); border:2px solid #dc2626; border-radius:16px; padding:25px; margin-bottom:40px; position:relative; overflow:hidden;">
+          <div style="position:absolute; top:0; right:0; width:100px; height:100px; background:rgba(220,38,38,0.1); border-radius:50%; transform:translate(30px, -30px);"></div>
+          <div style="display:flex; align-items:center; position:relative;">
+            <div style="width:50px; height:50px; background:#dc2626; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-right:20px; flex-shrink:0;">
+              <span style="color:white; font-size:24px; font-weight:bold;">🛒</span>
+            </div>
+            <div>
+              <h3 style="margin:0 0 5px; font-size:20px; font-weight:600; color:#7f1d1d;">Action Required</h3>
+              <p style="margin:0; font-size:16px; color:#991b1b;">A new purchase request has been submitted and requires your attention.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Requester Information -->
+        <div style="background:#ffffff; border:1px solid #e5e7eb; border-radius:16px; overflow:hidden; margin-bottom:30px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);">
+          <div style="background:linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding:20px 30px; border-bottom:1px solid #e2e8f0;">
+            <h2 style="margin:0; font-size:18px; font-weight:600; color:#92400e; display:flex; align-items:center;">
+              <span style="width:24px; height:24px; background:#f59e0b; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; margin-right:12px;">
+                <span style="color:white; font-size:14px;">👤</span>
+              </span>
+              Submitted By
+            </h2>
+          </div>
+          <div style="padding:25px 30px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;">
+              <? if (data.name) { ?>
+              <tr>
+                <td style="padding:8px 0; font-weight:600; color:#64748b; width:120px;">Name:</td>
+                <td style="padding:8px 0; color:#1e293b; font-size:16px;"><strong><?= data.name ?></strong></td>
+              </tr>
+              <? } ?>
+              <? if (data.requesterEmail) { ?>
+              <tr>
+                <td style="padding:8px 0; font-weight:600; color:#64748b; width:120px;">Email:</td>
+                <td style="padding:8px 0; color:#1e293b;">
+                  <a href="mailto:<?= data.requesterEmail ?>" style="color:#3b82f6; text-decoration:none; font-weight:500;">
+                    <?= data.requesterEmail ?>
+                  </a>
+                </td>
+              </tr>
+              <? } ?>
+              <tr>
+                <td style="padding:8px 0; font-weight:600; color:#64748b; width:120px;">Submitted:</td>
+                <td style="padding:8px 0; color:#1e293b;"><?= data.timestamp ?></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+
+        <!-- Request Details Card -->
+        <div style="background:#ffffff; border:1px solid #e5e7eb; border-radius:16px; overflow:hidden; margin-bottom:40px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);">
+          
+          <!-- Card Header -->
+          <div style="background:linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding:20px 30px; border-bottom:1px solid #e2e8f0;">
+            <h2 style="margin:0; font-size:20px; font-weight:600; color:#1e293b; display:flex; align-items:center;">
+              <span style="width:24px; height:24px; background:#3b82f6; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; margin-right:12px;">
+                <span style="color:white; font-size:14px;">📋</span>
+              </span>
+              Purchase Request Details
+            </h2>
+          </div>
+
+          <!-- Details Table -->
+          <div style="padding:0;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%; border-collapse:collapse;">
+              
+              <? if (data.poNumber) { ?>
+              <tr>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; font-weight:600; color:#64748b; width:180px; vertical-align:top;">
+                  PO Number
+                </td>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; color:#1e293b;">
+                  <div style="background:#f1f5f9; padding:8px 16px; border-radius:8px; font-family:monospace; font-size:16px; font-weight:600; display:inline-block;">
+                    <?= data.poNumber ?>
+                  </div>
+                </td>
+              </tr>
+              <? } ?>
+              
+              <? if (data.item) { ?>
+              <tr>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; font-weight:600; color:#64748b; width:180px; vertical-align:top;">
+                  Description
+                </td>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; color:#1e293b; line-height:1.6;">
+                  <strong><?= data.item ?></strong>
+                </td>
+              </tr>
+              <? } ?>
+              
+              <? if (data.quantity) { ?>
+              <tr>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; font-weight:600; color:#64748b; width:180px; vertical-align:top;">
+                  Quantity
+                </td>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; color:#1e293b;">
+                  <strong><?= data.quantity ?></strong>
+                </td>
+              </tr>
+              <? } ?>
+              
+              <? if (data.cost) { ?>
+              <tr>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; font-weight:600; color:#64748b; width:180px; vertical-align:top;">
+                  Estimated Cost
+                </td>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; color:#1e293b;">
+                  <div style="background:linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%); color:#991b1b; padding:12px 20px; border-radius:10px; font-size:20px; font-weight:700; display:inline-block; border:1px solid #fecaca;">
+                    <?= data.cost ?>
+                  </div>
+                </td>
+              </tr>
+              <? } ?>
+
+              <? if (data.quotePdf) { ?>
+              <tr>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; font-weight:600; color:#64748b; width:180px; vertical-align:top;">
+                  Quote PDF
+                </td>
+                <td style="padding:20px 30px; border-bottom:1px solid #f1f5f9; color:#1e293b;">
+                  <a href="<?= data.quotePdf ?>" 
+                     style="background:linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color:white; padding:12px 24px; border-radius:8px; text-decoration:none; font-weight:600; display:inline-flex; align-items:center;">
+                    📄 View Quote Document
+                  </a>
+                </td>
+              </tr>
+              <? } ?>
+              
+              <tr>
+                <td style="padding:20px 30px; font-weight:600; color:#64748b; width:180px; vertical-align:top;">
+                  Current Status
+                </td>
+                <td style="padding:20px 30px; color:#1e293b;">
+                  <span style="background:linear-gradient(135deg, #ddd6fe 0%, #e0e7ff 100%); color:#5b21b6; padding:8px 16px; border-radius:20px; font-size:14px; font-weight:600; border:1px solid #c4b5fd;">
+                    ⏳ Awaiting Review
+                  </span>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+
+        <!-- Action Required Section -->
+        <div style="background:linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border:1px solid #f59e0b; border-radius:16px; padding:30px; margin-bottom:40px;">
+          <div style="display:flex; align-items:flex-start;">
+            <div style="width:48px; height:48px; background:#d97706; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-right:20px; flex-shrink:0;">
+              <span style="color:white; font-size:20px;">⚡</span>
+            </div>
+            <div>
+              <h3 style="margin:0 0 12px; font-size:18px; font-weight:600; color:#92400e;">Action Required</h3>
+              <p style="margin:0 0 15px; color:#a16207; line-height:1.6;">
+                This purchase request requires your attention. Please review the details and take action:
+              </p>
+              <ul style="margin:0; padding-left:20px; color:#a16207; line-height:1.8;">
+                <li><strong>Review</strong> the request details and cost estimate</li>
+                <li><strong>Approve or reject</strong> the purchase request</li>
+                <li><strong>Update the status</strong> in the Google Sheet to notify the requester</li>
+                <li><strong>Process</strong> the order if approved</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div style="text-align:center; padding:30px 0;">
+          <h3 style="margin:0 0 20px; font-size:18px; font-weight:600; color:#374151;">Quick Actions</h3>
+          <div style="display:inline-block; margin-right:15px;">
+            <a href="https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID" 
+               style="background:linear-gradient(135deg, #059669 0%, #047857 100%); color:white; padding:14px 24px; border-radius:8px; text-decoration:none; font-weight:600; display:inline-flex; align-items:center; margin:5px;">
+              📊 Open Purchase Request Sheet
+            </a>
+          </div>
+          <? if (data.requesterEmail) { ?>
+          <div style="display:inline-block;">
+            <a href="mailto:<?= data.requesterEmail ?>?subject=Re: Purchase Request <?= data.poNumber || '' ?>" 
+               style="background:linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color:white; padding:14px 24px; border-radius:8px; text-decoration:none; font-weight:600; display:inline-flex; align-items:center; margin:5px;">
+              📧 Reply to Requester
+            </a>
+          </div>
+          <? } ?>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div style="background:#f8fafc; padding:40px; text-align:center; border-top:1px solid #e5e7eb;">
+        <p style="margin:0 0 8px; color:#6b7280; font-size:14px; font-weight:500;">
+          Purchasing Team Notification System
+        </p>
+        <p style="margin:0 0 15px; color:#9ca3af; font-size:12px;">
+          Request Reference: Row <?= data.rowNumber ?> | Submitted: <?= data.timestamp ?>
+        </p>
+        <div style="width:100%; height:1px; background:linear-gradient(90deg, transparent, #d1d5db, transparent); margin:20px 0;"></div>
+        <p style="margin:0; font-size:11px; color:#d1d5db;">
+          This notification was generated automatically by Google Apps Script
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
